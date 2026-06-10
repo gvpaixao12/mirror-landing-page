@@ -731,3 +731,94 @@ p { margin: 0; }
   }
   html { scroll-behavior: auto; }
 }
+
+/* ============ BRIEFING PAGE ============ */
+.brief-form { display: flex; flex-direction: column; gap: 40px; }
+.brief-group {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(24px, 3vw, 36px);
+}
+.brief-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--purple);
+  margin: 0 0 24px;
+}
+.brief-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.brief-field { display: flex; flex-direction: column; gap: 8px; }
+.brief-field-full { grid-column: 1 / -1; }
+.brief-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.brief-field input,
+.brief-field select,
+.brief-field textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  resize: vertical;
+}
+.brief-field textarea { min-height: 96px; }
+.brief-field input::placeholder,
+.brief-field textarea::placeholder { color: var(--dim); }
+.brief-field input:focus,
+.brief-field select:focus,
+.brief-field textarea:focus {
+  outline: none;
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.18);
+}
+.brief-field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%238A82A0' d='M6 8L0 0h12z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+}
+.brief-field.has-error input,
+.brief-field.has-error select,
+.brief-field.has-error textarea {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.18);
+}
+.brief-error {
+  font-size: 12px;
+  color: #f472b6;
+  font-weight: 600;
+}
+.brief-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.brief-success {
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 4vw, 48px);
+}
+.brief-success .check-badge { margin: 0 auto; }
+@media (max-width: 720px) {
+  .brief-grid { grid-template-columns: 1fr; }
+  .brief-actions { flex-direction: column-reverse; }
+  .brief-actions .btn { width: 100%; }
+}
