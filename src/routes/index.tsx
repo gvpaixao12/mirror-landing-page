@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/")({
@@ -225,7 +226,7 @@ function Index() {
             45 minutos de conversa. Zero compromisso.<br className="show-mobile" />
             Você sai da call sabendo se faz sentido.
           </p>
-          <a href="mailto:contato@gsolutions.com" className="btn btn-primary btn-large">Agendar minha call →</a>
+          <Link to="/briefing" className="btn btn-primary btn-large">Agendar minha call →</Link>
         </div>
       </section>
 
