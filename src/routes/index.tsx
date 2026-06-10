@@ -127,9 +127,10 @@ function Index() {
               monta um squad enxuto, e entrega um software <i>seu</i> — pensado
               pro seu fluxo, conectado às suas ferramentas.
             </p>
-            <div className="hero-ctas">
-              <a href="#cta" className="btn btn-primary">Pedir um orçamento →</a>
-              <a href="#cases" className="btn btn-secondary">▶ Ver demo (2 min)</a>
+            <div className="hero-video-wrap">
+              <div className="hero-video" aria-label="Espaço reservado para vídeo">
+                <span>Vídeo em breve</span>
+              </div>
             </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
