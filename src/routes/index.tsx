@@ -114,7 +114,7 @@ function Index() {
           <div className="hero-text">
             <span className="pill">
               <span className="pill-dot"></span>
-              software sob medida · em semanas
+              PRODUTO · SOFTWARE SOB MEDIDA
             </span>
             <h1 className="hero-title">
               Seu problema<br />
@@ -155,7 +155,7 @@ function Index() {
         <div className="container">
           <div className="section-head">
             <div>
-              <span className="pill"><span className="pill-dot"></span>como a gente trabalha</span>
+              <span className="pill"><span className="pill-dot"></span>COMO FUNCIONA</span>
               <h2>Rápido, claro,<br />seu desde o dia 1.</h2>
             </div>
             <p className="section-lead">
