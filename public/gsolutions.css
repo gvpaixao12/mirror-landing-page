@@ -186,7 +186,7 @@ p { margin: 0; }
   gap: 12px;
 }
 .brand-mark {
-  width: 56px; height: 56px;
+  width: 44px; height: 44px;
   display: grid;
   place-items: center;
 }
