@@ -89,7 +89,6 @@ function Index() {
             <a href="#cases">Cases</a>
           </nav>
           <div className="nav-actions">
-            <a href="#cta" className="btn btn-ghost">Começar →</a>
             <button
               className={"nav-toggle" + (menuOpen ? " is-open" : "")}
               aria-label="Abrir menu"
@@ -127,9 +126,10 @@ function Index() {
               monta um squad enxuto, e entrega um software <i>seu</i> — pensado
               pro seu fluxo, conectado às suas ferramentas.
             </p>
-            <div className="hero-ctas">
-              <a href="#cta" className="btn btn-primary">Pedir um orçamento →</a>
-              <a href="#cases" className="btn btn-secondary">▶ Ver demo (2 min)</a>
+            <div className="hero-video-wrap">
+              <div className="hero-video" aria-label="Espaço reservado para vídeo">
+                <span>Vídeo em breve</span>
+              </div>
             </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
@@ -233,7 +233,7 @@ function Index() {
             45 minutos de conversa. Zero compromisso.<br className="show-mobile" />
             Você sai da call sabendo se faz sentido.
           </p>
-          <Link to="/briefing" className="btn btn-primary btn-large">Agendar minha call →</Link>
+          <Link to="/briefing" className="btn btn-primary btn-large">Criar um orçamento →</Link>
         </div>
       </section>
 
