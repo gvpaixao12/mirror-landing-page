@@ -65,7 +65,7 @@ function Index() {
         <div className="container nav-inner">
           <a href="#" className="brand">
             <span className="brand-mark" aria-hidden="true">
-              <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
+              <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
                 <defs>
                   <linearGradient id="plOrbitGrad" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
                     <stop offset="0" stopColor="#A855F7" />
