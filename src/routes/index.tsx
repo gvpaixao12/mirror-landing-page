@@ -183,41 +183,7 @@ function Index() {
 
       <section className="case" id="cases">
         <div className="container">
-          <div className="case-card">
-            <div className="case-glow case-glow-1" aria-hidden="true"></div>
-            <div className="case-glow case-glow-2" aria-hidden="true"></div>
-            <div className="case-content">
-              <span className="pill pill-on-dark">
-                <span className="pill-dot pill-dot-pink"></span>
-                case · 2026
-              </span>
-              <h2 className="case-quote">
-                "De 14 planilhas pra 1 sistema.<br />
-                Em 5 semanas, custo de um SaaS gringo<br className="hide-mobile" />
-                de 6 meses."
-              </h2>
-              <div className="case-author">
-                <div className="case-avatar"></div>
-                <div>
-                  <strong>Marina Tavares</strong>
-                  <small>COO, Distribuidora regional · 80 colaboradores</small>
-                </div>
-              </div>
-              <div className="metrics">
-                {[
-                  ["5 sem", "do briefing ao go-live"],
-                  ["−72%", "tempo de fechamento"],
-                  ["R$ 0", "mensalidade de SaaS"],
-                  ["100%", "do código é deles"],
-                ].map(([n, l]) => (
-                  <div className="metric" key={l}>
-                    <span className="metric-num">{n}</span>
-                    <span className="metric-label">{l}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <CaseCarousel />
         </div>
       </section>
 
@@ -265,5 +231,52 @@ function Index() {
         </div>
       </footer>
     </>
+  );
+}
+
+const CASES = [
+  {
+    quote: '"Com a organização do meu estoque no sistema, ficou muito mais fácil! Consegui inclusive aumentar meu faturamento."',
+    name: "Giovanna G.",
+    role: "Logista na Mundo Pet",
+  },
+  {
+    quote: '"Minha apresentação comercial ficou mais dinâmica e interativa. Está mais visual para o cliente, muito mais fácil de gerar valor."',
+    name: "Rafael M.",
+    role: "Technik",
+  },
+];
+
+function CaseCarousel() {
+  const [i, setI] = useState(0);
+  const c = CASES[i];
+  const next = () => setI((v) => (v + 1) % CASES.length);
+  return (
+    <div className="case-card">
+      <div className="case-glow case-glow-1" aria-hidden="true"></div>
+      <div className="case-glow case-glow-2" aria-hidden="true"></div>
+      <button
+        type="button"
+        className="case-next"
+        aria-label="Próximo case"
+        onClick={next}
+      >
+        →
+      </button>
+      <div className="case-content">
+        <span className="pill pill-on-dark">
+          <span className="pill-dot pill-dot-pink"></span>
+          case · 2026
+        </span>
+        <h2 className="case-quote">{c.quote}</h2>
+        <div className="case-author">
+          <div className="case-avatar"></div>
+          <div>
+            <strong>{c.name}</strong>
+            <small>{c.role}</small>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
