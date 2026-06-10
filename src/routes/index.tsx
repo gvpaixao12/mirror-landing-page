@@ -148,11 +148,11 @@ function Index() {
           </div>
           <div className="feature-grid">
             {[
-              ["01", "Briefing relâmpago", "Uma call de 45 min. Você fala, a gente desenha o escopo na tela junto."],
+              ["01", "Briefing relâmpago", "Preencha sua ideia em nosso formulário. Fale com um agente e desenhamos o escopo na tela junto."],
               ["02", "Proposta em 72h", "Preço fechado, prazo fechado, marcos fechados. Sem surpresa no caminho."],
               ["03", "Sprints semanais", "Toda sexta uma versão rodando. Você testa, dá feedback, ajustamos."],
               ["04", "Tudo seu", "Repositório seu. Infra na sua conta. Documentação completa. Nada de lock-in."],
-              ["05", "Suporte 30 dias", "A gente fica de plantão pra bugs e ajustes pós-entrega. Sem cobrar extra."],
+              ["05", "Suporte", "A gente fica à disposição para atender bugs e realizar ajustes."],
               ["06", "Evolução contínua", "Quer continuar evoluindo? Pacote mensal opcional. Quer só usar? Beleza também."],
             ].map(([n, t, d]) => (
               <article className="feature-card" key={n}>
