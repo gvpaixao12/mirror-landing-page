@@ -142,20 +142,6 @@ function Index() {
         </div>
       </section>
 
-      <section className="logos">
-        <div className="container logos-inner">
-          <p className="logos-label">Empresas que dormem<br />melhor desde então →</p>
-          <div className="logos-row">
-            <span>NORTHWIND</span>
-            <span>lumen.</span>
-            <span>Helix◊</span>
-            <span>PRISMA</span>
-            <span>aurora/</span>
-            <span>kova✦</span>
-          </div>
-        </div>
-      </section>
-
       <section className="features" id="como">
         <div className="container">
           <div className="section-head">
