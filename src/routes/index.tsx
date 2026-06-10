@@ -89,7 +89,6 @@ function Index() {
             <a href="#cases">Cases</a>
           </nav>
           <div className="nav-actions">
-            <a href="#cta" className="btn btn-ghost">Começar →</a>
             <button
               className={"nav-toggle" + (menuOpen ? " is-open" : "")}
               aria-label="Abrir menu"
