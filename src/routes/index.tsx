@@ -75,7 +75,10 @@ function Index() {
                 </defs>
                 <circle cx="32" cy="32" r="19" fill="none" stroke="url(#plOrbitGrad)" strokeWidth="4.5" opacity="0.45" />
                 <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGrad)" />
-                <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGrad)" />
+                <g>
+                  <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGrad)" />
+                  <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="7s" repeatCount="indefinite" />
+                </g>
               </svg>
             </span>
             <span className="brand-name">ProductLab</span>
