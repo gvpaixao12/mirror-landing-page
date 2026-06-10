@@ -233,3 +233,50 @@ function Index() {
     </>
   );
 }
+
+const CASES = [
+  {
+    quote: '"Com a organização do meu estoque no sistema, ficou muito mais fácil! Consegui inclusive aumentar meu faturamento."',
+    name: "Giovanna G.",
+    role: "Logista na Mundo Pet",
+  },
+  {
+    quote: '"Minha apresentação comercial ficou mais dinâmica e interativa. Está mais visual para o cliente, muito mais fácil de gerar valor."',
+    name: "Rafael M.",
+    role: "Technik",
+  },
+];
+
+function CaseCarousel() {
+  const [i, setI] = useState(0);
+  const c = CASES[i];
+  const next = () => setI((v) => (v + 1) % CASES.length);
+  return (
+    <div className="case-card">
+      <div className="case-glow case-glow-1" aria-hidden="true"></div>
+      <div className="case-glow case-glow-2" aria-hidden="true"></div>
+      <button
+        type="button"
+        className="case-next"
+        aria-label="Próximo case"
+        onClick={next}
+      >
+        →
+      </button>
+      <div className="case-content">
+        <span className="pill pill-on-dark">
+          <span className="pill-dot pill-dot-pink"></span>
+          case · 2026
+        </span>
+        <h2 className="case-quote">{c.quote}</h2>
+        <div className="case-author">
+          <div className="case-avatar"></div>
+          <div>
+            <strong>{c.name}</strong>
+            <small>{c.role}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
