@@ -564,6 +564,36 @@ p { margin: 0; }
 .case-author strong { font-size: 15px; display: block; }
 .case-author small { font-size: 13px; color: var(--dim); }
 
+.case-next {
+  position: absolute;
+  top: 50%;
+  right: clamp(16px, 2.5vw, 28px);
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--dim);
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.18;
+  transition: opacity .25s ease, background .25s ease, color .25s ease, transform .25s ease;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.case-card:hover .case-next,
+.case-next:hover,
+.case-next:focus-visible {
+  opacity: 1;
+  color: #fff;
+  background: var(--grad);
+  border-color: transparent;
+}
+.case-next:hover { transform: translateY(-50%) scale(1.06); }
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
