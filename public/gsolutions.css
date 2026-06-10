@@ -183,11 +183,12 @@ p { margin: 0; }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 .brand-mark {
-  width: 44px; height: 44px;
-  display: grid;
+  width: 36px; height: 36px;
+  display: inline-flex;
+  align-items: center;
   place-items: center;
 }
 .brand-name {
