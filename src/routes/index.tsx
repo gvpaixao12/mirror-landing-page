@@ -115,14 +115,6 @@ function Index() {
               <a href="#cta" className="btn btn-primary">Pedir um orçamento →</a>
               <a href="#cases" className="btn btn-secondary">▶ Ver demo (2 min)</a>
             </div>
-            <div className="hero-social">
-              <div className="avatars">
-                <span></span><span></span><span></span><span></span>
-              </div>
-              <span className="hero-social-text">+127 empresas atendidas</span>
-              <span className="hero-social-divider"></span>
-              <span className="hero-social-text">4.9/5 satisfação</span>
-            </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
             <div className="float-card card-sprint">
@@ -151,8 +143,7 @@ function Index() {
               <h2>Rápido, claro,<br />seu desde o dia 1.</h2>
             </div>
             <p className="section-lead">
-              Sem contratos de 18 meses. Sem agência que some. O processo
-              é desenhado pra você sentir progresso toda semana.
+              Sem contratos periódicos. O processo é desenhado pra você sentir progresso rápido.
             </p>
           </div>
           <div className="feature-grid">
