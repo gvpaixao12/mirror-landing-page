@@ -64,7 +64,20 @@ function Index() {
       <header className="nav">
         <div className="container nav-inner">
           <a href="#" className="brand">
-            <span className="brand-mark">✦</span>
+            <span className="brand-mark" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
+                <defs>
+                  <linearGradient id="plOrbitGrad" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stopColor="#A855F7" />
+                    <stop offset="0.5" stopColor="#D14FBF" />
+                    <stop offset="1" stopColor="#EC4899" />
+                  </linearGradient>
+                </defs>
+                <circle cx="32" cy="32" r="19" fill="none" stroke="url(#plOrbitGrad)" strokeWidth="4.5" opacity="0.45" />
+                <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGrad)" />
+                <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGrad)" />
+              </svg>
+            </span>
             <span className="brand-name">ProductLab</span>
           </a>
           <nav className="nav-links" aria-label="Principal">
@@ -224,7 +237,21 @@ function Index() {
       <footer className="footer">
         <div className="container footer-inner">
           <div>
-            <div className="footer-brand">✦ ProductLab</div>
+            <div className="footer-brand">
+              <svg width="18" height="18" viewBox="0 0 64 64" fill="none" style={{ verticalAlign: "middle", marginRight: 6 }}>
+                <defs>
+                  <linearGradient id="plOrbitGradFooter" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stopColor="#A855F7" />
+                    <stop offset="0.5" stopColor="#D14FBF" />
+                    <stop offset="1" stopColor="#EC4899" />
+                  </linearGradient>
+                </defs>
+                <circle cx="32" cy="32" r="19" fill="none" stroke="url(#plOrbitGradFooter)" strokeWidth="4.5" opacity="0.45" />
+                <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGradFooter)" />
+                <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGradFooter)" />
+              </svg>
+              ProductLab
+            </div>
             <p>Seu software do jeito que você sempre pensou.</p>
           </div>
           <div className="footer-links">
