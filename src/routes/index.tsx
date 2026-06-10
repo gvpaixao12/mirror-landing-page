@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "GSolutions — Software sob medida" },
-      { name: "description", content: "GSolutions — Software sob medida, do briefing ao deploy em semanas." },
-      { property: "og:title", content: "GSolutions — Software sob medida" },
+      { title: "ProductLab — Software sob medida" },
+      { name: "description", content: "ProductLab — Software sob medida, do briefing ao deploy em semanas." },
+      { property: "og:title", content: "ProductLab — Software sob medida" },
       { property: "og:description", content: "Software sob medida, do briefing ao deploy em semanas." },
     ],
   }),
@@ -65,7 +65,7 @@ function Index() {
         <div className="container nav-inner">
           <a href="#" className="brand">
             <span className="brand-mark">✦</span>
-            <span className="brand-name">GSolutions</span>
+            <span className="brand-name">ProductLab</span>
           </a>
           <nav className="nav-links" aria-label="Principal">
             <a href="#produto">Produto</a>
@@ -224,7 +224,7 @@ function Index() {
       <footer className="footer">
         <div className="container footer-inner">
           <div>
-            <div className="footer-brand">✦ GSolutions</div>
+            <div className="footer-brand">✦ ProductLab</div>
             <p>Seu software do jeito que você sempre pensou.</p>
           </div>
           <div className="footer-links">
