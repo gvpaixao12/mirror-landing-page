@@ -4,8 +4,10 @@ import { getSession, isAuthed, logout } from "../lib/admin-auth";
 import {
   STAGES,
   type Stage,
-  leads,
+  type Lead,
   forms,
+  loadLeads,
+  saveLeads,
   getSummary,
   getFunnel,
   formatBRL,
@@ -39,15 +41,28 @@ function AdminPage() {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState("");
 
-  // Proteção de rota: sem sessão → manda pro login.
+  // Estado dos leads — carregado do localStorage no cliente.
+  const [leads, setLeads] = useState<Lead[]>([]);
+
+  // Proteção de rota + carga inicial.
   useEffect(() => {
     if (!isAuthed()) {
       navigate({ to: "/login" });
       return;
     }
     setEmail(getSession()?.email ?? "");
+    setLeads(loadLeads());
     setReady(true);
   }, [navigate]);
+
+  // Move um lead para outra etapa e persiste.
+  const moveLead = (id: string, stage: Stage) => {
+    setLeads((prev) => {
+      const next = prev.map((l) => (l.id === id ? { ...l, stage } : l));
+      saveLeads(next);
+      return next;
+    });
+  };
 
   const onLogout = () => {
     logout();
@@ -93,11 +108,11 @@ function AdminPage() {
       </aside>
 
       <main className="crm-main">
-        {view === "dashboard" && <DashboardView />}
-        {view === "kanban" && <KanbanView />}
-        {view === "leads" && <LeadsView />}
-        {view === "clientes" && <ClientesView />}
-        {view === "propostas" && <PropostasView />}
+        {view === "dashboard" && <DashboardView leads={leads} />}
+        {view === "kanban" && <KanbanView leads={leads} moveLead={moveLead} />}
+        {view === "leads" && <LeadsView leads={leads} />}
+        {view === "clientes" && <ClientesView leads={leads} />}
+        {view === "propostas" && <PropostasView leads={leads} />}
         {view === "formularios" && <FormulariosView />}
       </main>
     </div>
@@ -106,9 +121,9 @@ function AdminPage() {
 
 // ===================== Dashboard =====================
 
-function DashboardView() {
-  const s = getSummary();
-  const funnel = getFunnel();
+function DashboardView({ leads }: { leads: Lead[] }) {
+  const s = getSummary(leads);
+  const funnel = getFunnel(leads);
   const maxCount = Math.max(1, ...funnel.map((f) => f.count));
 
   return (
@@ -150,17 +165,47 @@ function DashboardView() {
   );
 }
 
-// ===================== Kanban =====================
+// ===================== Kanban (drag & drop) =====================
 
-function KanbanView() {
+function KanbanView({
+  leads,
+  moveLead,
+}: {
+  leads: Lead[];
+  moveLead: (id: string, stage: Stage) => void;
+}) {
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overStage, setOverStage] = useState<Stage | null>(null);
+
+  const onDrop = (stage: Stage) => {
+    if (dragId) moveLead(dragId, stage);
+    setDragId(null);
+    setOverStage(null);
+  };
+
   return (
     <>
-      <PageHead title="Kanban" subtitle="Arraste mentalmente — visão por etapa do funil." />
+      <PageHead title="Kanban" subtitle="Arraste os cards entre as etapas do funil." />
       <div className="crm-kanban">
         {STAGES.map((stage) => {
           const cards = leads.filter((l) => l.stage === stage);
+          const isOver = overStage === stage;
           return (
-            <div className="crm-kanban-col" key={stage}>
+            <div
+              className={"crm-kanban-col" + (isOver ? " is-over" : "")}
+              key={stage}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (overStage !== stage) setOverStage(stage);
+              }}
+              onDragLeave={(e) => {
+                // só limpa se realmente saiu da coluna (não ao passar por um filho)
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setOverStage((s) => (s === stage ? null : s));
+                }
+              }}
+              onDrop={() => onDrop(stage)}
+            >
               <div className="crm-kanban-head">
                 <span>{stage}</span>
                 <span className="crm-badge">{cards.length}</span>
@@ -170,7 +215,16 @@ function KanbanView() {
                   <p className="crm-empty-sm">—</p>
                 ) : (
                   cards.map((l) => (
-                    <div className="crm-card" key={l.id}>
+                    <div
+                      className={"crm-card crm-card-draggable" + (dragId === l.id ? " is-dragging" : "")}
+                      key={l.id}
+                      draggable
+                      onDragStart={() => setDragId(l.id)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setOverStage(null);
+                      }}
+                    >
                       <strong>{l.name}</strong>
                       <span>{l.company}</span>
                       <span className="crm-card-value">{formatBRL(l.value)}</span>
@@ -188,7 +242,7 @@ function KanbanView() {
 
 // ===================== Leads =====================
 
-function LeadsView() {
+function LeadsView({ leads }: { leads: Lead[] }) {
   return (
     <>
       <PageHead title="Leads" subtitle="Todos os contatos no funil." />
@@ -210,7 +264,7 @@ function LeadsView() {
 
 // ===================== Clientes =====================
 
-function ClientesView() {
+function ClientesView({ leads }: { leads: Lead[] }) {
   const clientes = leads.filter((l) => l.stage === "Ganho");
   return (
     <>
@@ -232,7 +286,7 @@ function ClientesView() {
 
 // ===================== Propostas =====================
 
-function PropostasView() {
+function PropostasView({ leads }: { leads: Lead[] }) {
   const props = leads.filter((l) => l.stage === "Proposta" || l.stage === "Negociação");
   return (
     <>

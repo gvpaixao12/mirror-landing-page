@@ -40,8 +40,10 @@ export interface FormEntry {
   createdAt: string; // ISO
 }
 
-// --- Leads (espelha o print: 1 lead, em "Qualificação") ---
-export const leads: Lead[] = [
+// --- Leads iniciais (espelha o print: 1 lead, em "Qualificação") ---
+// Servem só como "semente": na primeira vez que o painel abre, viram a base.
+// Depois disso o estado real fica salvo no localStorage (ver load/saveLeads).
+export const seedLeads: Lead[] = [
   {
     id: "l1",
     name: "Marina Tavares",
@@ -52,6 +54,26 @@ export const leads: Lead[] = [
     createdAt: "2026-06-09T14:20:00Z",
   },
 ];
+
+// ---------- Persistência (localStorage) ----------
+const LEADS_KEY = "pl_crm_leads";
+
+export function loadLeads(): Lead[] {
+  if (typeof window === "undefined") return seedLeads;
+  const raw = localStorage.getItem(LEADS_KEY);
+  if (!raw) return seedLeads;
+  try {
+    const parsed = JSON.parse(raw) as Lead[];
+    return Array.isArray(parsed) ? parsed : seedLeads;
+  } catch {
+    return seedLeads;
+  }
+}
+
+export function saveLeads(leads: Lead[]): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
+}
 
 // --- Formulários recebidos (espelha o print: 2 no total, 1 novo) ---
 export const forms: FormEntry[] = [
@@ -87,7 +109,7 @@ export interface CrmSummary {
   conversion: number; // %
 }
 
-export function getSummary(): CrmSummary {
+export function getSummary(leads: Lead[]): CrmSummary {
   const totalLeads = leads.length;
   const newLeads = leads.filter((l) => l.stage === "Novo").length;
   const inNegotiation = leads.filter((l) =>
@@ -113,7 +135,7 @@ export function getSummary(): CrmSummary {
   };
 }
 
-export function getFunnel(): { stage: Stage; count: number }[] {
+export function getFunnel(leads: Lead[]): { stage: Stage; count: number }[] {
   return STAGES.map((stage) => ({
     stage,
     count: leads.filter((l) => l.stage === stage).length,

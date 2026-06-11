@@ -1168,7 +1168,11 @@ p { margin: 0; }
   font-weight: 700;
   color: var(--ink);
 }
-.crm-kanban-body { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+.crm-kanban-body { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+.crm-kanban-col.is-over {
+  border-color: var(--purple);
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.1), var(--bg-2));
+}
 .crm-card {
   background: var(--bg-3);
   border: 1px solid var(--border);
@@ -1178,6 +1182,10 @@ p { margin: 0; }
   flex-direction: column;
   gap: 4px;
 }
+.crm-card-draggable { cursor: grab; transition: opacity 0.15s ease, transform 0.15s ease, border-color 0.15s ease; }
+.crm-card-draggable:hover { border-color: var(--purple); transform: translateY(-1px); }
+.crm-card-draggable:active { cursor: grabbing; }
+.crm-card-draggable.is-dragging { opacity: 0.4; }
 .crm-card strong { font-size: 14px; }
 .crm-card span { font-size: 12px; color: var(--dim); }
 .crm-card-value { color: var(--purple) !important; font-weight: 600; }

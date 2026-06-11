@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PropostaRouteImport } from './routes/proposta'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as BriefingRouteImport } from './routes/briefing'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PropostaRoute = PropostaRouteImport.update({
+  id: '/proposta',
+  path: '/proposta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/briefing': typeof BriefingRoute
   '/login': typeof LoginRoute
+  '/proposta': typeof PropostaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/briefing': typeof BriefingRoute
   '/login': typeof LoginRoute
+  '/proposta': typeof PropostaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/briefing': typeof BriefingRoute
   '/login': typeof LoginRoute
+  '/proposta': typeof PropostaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/briefing' | '/login'
+  fullPaths: '/' | '/admin' | '/briefing' | '/login' | '/proposta'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/briefing' | '/login'
-  id: '__root__' | '/' | '/admin' | '/briefing' | '/login'
+  to: '/' | '/admin' | '/briefing' | '/login' | '/proposta'
+  id: '__root__' | '/' | '/admin' | '/briefing' | '/login' | '/proposta'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   BriefingRoute: typeof BriefingRoute
   LoginRoute: typeof LoginRoute
+  PropostaRoute: typeof PropostaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/proposta': {
+      id: '/proposta'
+      path: '/proposta'
+      fullPath: '/proposta'
+      preLoaderRoute: typeof PropostaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   BriefingRoute: BriefingRoute,
   LoginRoute: LoginRoute,
+  PropostaRoute: PropostaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
