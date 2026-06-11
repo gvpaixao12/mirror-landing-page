@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getSession, isAuthed, logout } from "../lib/admin-auth";
+import { getCurrentEmail, isAuthed, logout } from "../lib/admin-auth";
 import {
   STAGES,
   type Stage,
   type Lead,
-  forms,
-  loadLeads,
-  saveLeads,
+  type FormEntry,
+  fetchLeads,
+  fetchForms,
+  updateLeadStage,
   getSummary,
   getFunnel,
   formatBRL,
@@ -16,10 +17,7 @@ import {
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
-    meta: [
-      { title: "ProductLab CRM" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "ProductLab CRM" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: AdminPage,
 });
@@ -41,35 +39,56 @@ function AdminPage() {
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState("");
 
-  // Estado dos leads — carregado do localStorage no cliente.
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [forms, setForms] = useState<FormEntry[]>([]);
+  const [loadError, setLoadError] = useState("");
 
-  // Proteção de rota + carga inicial.
+  // Proteção de rota + carga inicial dos dados.
   useEffect(() => {
-    if (!isAuthed()) {
-      navigate({ to: "/login" });
-      return;
-    }
-    setEmail(getSession()?.email ?? "");
-    setLeads(loadLeads());
-    setReady(true);
+    let active = true;
+    (async () => {
+      if (!(await isAuthed())) {
+        navigate({ to: "/login" });
+        return;
+      }
+      if (!active) return;
+      setEmail((await getCurrentEmail()) ?? "");
+      try {
+        const [ls, fs] = await Promise.all([fetchLeads(), fetchForms()]);
+        if (!active) return;
+        setLeads(ls);
+        setForms(fs);
+      } catch (e) {
+        if (active) setLoadError(e instanceof Error ? e.message : "Falha ao carregar dados.");
+      }
+      if (active) setReady(true);
+    })();
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
-  // Move um lead para outra etapa e persiste.
-  const moveLead = (id: string, stage: Stage) => {
-    setLeads((prev) => {
-      const next = prev.map((l) => (l.id === id ? { ...l, stage } : l));
-      saveLeads(next);
-      return next;
-    });
+  // Move um lead de etapa: atualiza na tela na hora e persiste no Supabase.
+  const moveLead = async (id: string, stage: Stage) => {
+    const prev = leads;
+    setLeads((cur) => cur.map((l) => (l.id === id ? { ...l, stage } : l)));
+    try {
+      await updateLeadStage(id, stage);
+    } catch {
+      setLeads(prev); // desfaz se der erro
+    }
   };
 
-  const onLogout = () => {
-    logout();
+  const onLogout = async () => {
+    await logout();
     navigate({ to: "/login" });
   };
 
-  if (!ready) return null;
+  if (!ready) {
+    return (
+      <div className="crm-loading">{loadError ? `Erro: ${loadError}` : "Carregando..."}</div>
+    );
+  }
 
   return (
     <div className="crm-shell">
@@ -108,12 +127,12 @@ function AdminPage() {
       </aside>
 
       <main className="crm-main">
-        {view === "dashboard" && <DashboardView leads={leads} />}
+        {view === "dashboard" && <DashboardView leads={leads} forms={forms} />}
         {view === "kanban" && <KanbanView leads={leads} moveLead={moveLead} />}
         {view === "leads" && <LeadsView leads={leads} />}
         {view === "clientes" && <ClientesView leads={leads} />}
         {view === "propostas" && <PropostasView leads={leads} />}
-        {view === "formularios" && <FormulariosView />}
+        {view === "formularios" && <FormulariosView forms={forms} />}
       </main>
     </div>
   );
@@ -121,8 +140,8 @@ function AdminPage() {
 
 // ===================== Dashboard =====================
 
-function DashboardView({ leads }: { leads: Lead[] }) {
-  const s = getSummary(leads);
+function DashboardView({ leads, forms }: { leads: Lead[]; forms: FormEntry[] }) {
+  const s = getSummary(leads, forms);
   const funnel = getFunnel(leads);
   const maxCount = Math.max(1, ...funnel.map((f) => f.count));
 
@@ -199,7 +218,6 @@ function KanbanView({
                 if (overStage !== stage) setOverStage(stage);
               }}
               onDragLeave={(e) => {
-                // só limpa se realmente saiu da coluna (não ao passar por um filho)
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                   setOverStage((s) => (s === stage ? null : s));
                 }
@@ -216,7 +234,9 @@ function KanbanView({
                 ) : (
                   cards.map((l) => (
                     <div
-                      className={"crm-card crm-card-draggable" + (dragId === l.id ? " is-dragging" : "")}
+                      className={
+                        "crm-card crm-card-draggable" + (dragId === l.id ? " is-dragging" : "")
+                      }
                       key={l.id}
                       draggable
                       onDragStart={() => setDragId(l.id)}
@@ -308,7 +328,7 @@ function PropostasView({ leads }: { leads: Lead[] }) {
 
 // ===================== Formulários =====================
 
-function FormulariosView() {
+function FormulariosView({ forms }: { forms: FormEntry[] }) {
   return (
     <>
       <PageHead title="Formulários" subtitle="Mensagens recebidas pelo site." />

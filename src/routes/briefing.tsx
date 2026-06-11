@@ -1,14 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { z } from "zod";
+import { createForm } from "../lib/crm-data";
 
 export const Route = createFileRoute("/briefing")({
   head: () => ({
     meta: [
       { title: "Briefing — GSolutions" },
-      { name: "description", content: "Conte sobre o software que você quer construir. Quanto mais detalhe, melhor a proposta." },
+      {
+        name: "description",
+        content:
+          "Conte sobre o software que você quer construir. Quanto mais detalhe, melhor a proposta.",
+      },
       { property: "og:title", content: "Briefing — GSolutions" },
-      { property: "og:description", content: "Envie seu briefing e receba uma proposta sob medida em até 72h." },
+      {
+        property: "og:description",
+        content: "Envie seu briefing e receba uma proposta sob medida em até 72h.",
+      },
     ],
   }),
   component: BriefingPage,
@@ -33,8 +41,19 @@ const schema = z.object({
 type FormState = z.infer<typeof schema>;
 
 const initial: FormState = {
-  name: "", email: "", company: "", location: "", role: "", industry: "",
-  teamSize: "", goal: "", problem: "", tools: "", budget: "", timeline: "", notes: "",
+  name: "",
+  email: "",
+  company: "",
+  location: "",
+  role: "",
+  industry: "",
+  teamSize: "",
+  goal: "",
+  problem: "",
+  tools: "",
+  budget: "",
+  timeline: "",
+  notes: "",
 };
 
 function BriefingPage() {
@@ -42,13 +61,18 @@ function BriefingPage() {
   const [data, setData] = useState<FormState>(initial);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
-  const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setData((d) => ({ ...d, [k]: e.target.value }));
-  };
+  const set =
+    (k: keyof FormState) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      setData((d) => ({ ...d, [k]: e.target.value }));
+    };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSendError("");
     const parsed = schema.safeParse(data);
     if (!parsed.success) {
       const errs: Partial<Record<keyof FormState, string>> = {};
@@ -58,12 +82,33 @@ function BriefingPage() {
       }
       setErrors(errs);
       const firstKey = Object.keys(errs)[0];
-      if (firstKey) document.getElementById(`f-${firstKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (firstKey)
+        document
+          .getElementById(`f-${firstKey}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setErrors({});
-    setSubmitted(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setSending(true);
+    try {
+      await createForm({
+        name: data.name,
+        email: data.email,
+        company: data.company || "",
+        message: data.goal,
+        payload: { ...data },
+      });
+      setSubmitted(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setSendError(
+        err instanceof Error
+          ? `Não foi possível enviar: ${err.message}`
+          : "Não foi possível enviar. Tente novamente.",
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -71,12 +116,47 @@ function BriefingPage() {
       <header className="nav">
         <div className="container nav-inner">
           <Link to="/" className="brand">
-            <span className="brand-mark">✦</span>
+            <span className="brand-mark" aria-hidden="true">
+              <svg width="36" height="36" viewBox="0 0 64 64" fill="none">
+                <defs>
+                  <linearGradient
+                    id="plOrbitGrad"
+                    x1="6"
+                    y1="6"
+                    x2="58"
+                    y2="58"
+                    gradientUnits="userSpaceOnUse"
+                  >
+                    <stop offset="0" stopColor="#A855F7" />
+                    <stop offset="0.5" stopColor="#D14FBF" />
+                    <stop offset="1" stopColor="#EC4899" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="19"
+                  fill="none"
+                  stroke="url(#plOrbitGrad)"
+                  strokeWidth="4.5"
+                  opacity="0.45"
+                />
+                <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGrad)" />
+                <g>
+                  <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGrad)" />
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 32 32"
+                    to="360 32 32"
+                    dur="7s"
+                    repeatCount="indefinite"
+                  />
+                </g>
+              </svg>
+            </span>
             <span className="brand-name">GSolutions</span>
           </Link>
-          <div className="nav-actions">
-            <Link to="/" className="btn btn-ghost">← Voltar</Link>
-          </div>
         </div>
       </header>
 
@@ -84,13 +164,15 @@ function BriefingPage() {
         <div className="hero-glow hero-glow-1" aria-hidden="true"></div>
         <div className="hero-glow hero-glow-2" aria-hidden="true"></div>
         <div className="container" style={{ position: "relative", zIndex: 2, maxWidth: 880 }}>
-          <span className="pill"><span className="pill-dot"></span>briefing · 5 minutos</span>
+          <span className="pill">
+            <span className="pill-dot"></span>briefing · 5 minutos
+          </span>
           <h1 className="hero-title" style={{ fontSize: "clamp(36px, 5.5vw, 64px)" }}>
             Conta tudo sobre <em className="grad-text">seu projeto.</em>
           </h1>
           <p className="hero-sub">
-            Quanto mais detalhe você der, mais precisa fica a proposta. Levamos até 72h pra responder
-            com escopo, prazo e preço fechado.
+            Quanto mais detalhe você der, mais precisa fica a proposta. Levamos até 72h pra
+            responder com escopo, prazo e preço fechado.
           </p>
         </div>
       </section>
@@ -99,18 +181,39 @@ function BriefingPage() {
         <div className="container" style={{ maxWidth: 880 }}>
           {submitted ? (
             <div className="brief-success">
-              <span className="check-badge" style={{ width: 44, height: 44, fontSize: 20, borderRadius: 12 }}>✓</span>
-              <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", marginTop: 18 }}>Briefing recebido!</h2>
+              <span
+                className="check-badge"
+                style={{ width: 44, height: 44, fontSize: 20, borderRadius: 12 }}
+              >
+                ✓
+              </span>
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", marginTop: 18 }}>
+                Briefing recebido!
+              </h2>
               <p style={{ color: "var(--dim)", marginTop: 12, fontSize: 16 }}>
-                Obrigado, <strong style={{ color: "var(--ink)" }}>{data.name.split(" ")[0]}</strong>.
-                Vamos analisar e responder no seu email <strong style={{ color: "var(--ink)" }}>{data.email}</strong> em até 72h.
+                Obrigado, <strong style={{ color: "var(--ink)" }}>{data.name.split(" ")[0]}</strong>
+                . Vamos analisar e responder no seu email{" "}
+                <strong style={{ color: "var(--ink)" }}>{data.email}</strong> em até 72h.
               </p>
-              <div style={{ marginTop: 28, display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <Link to="/" className="btn btn-primary">Voltar pra home</Link>
+              <div
+                style={{
+                  marginTop: 28,
+                  display: "flex",
+                  gap: 12,
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <Link to="/" className="btn btn-primary">
+                  Voltar pra home
+                </Link>
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => { setData(initial); setSubmitted(false); }}
+                  onClick={() => {
+                    setData(initial);
+                    setSubmitted(false);
+                  }}
                 >
                   Enviar outro briefing
                 </button>
@@ -120,22 +223,64 @@ function BriefingPage() {
             <form className="brief-form" onSubmit={onSubmit} noValidate>
               <FieldGroup title="Sobre você">
                 <Field id="name" label="Nome completo" error={errors.name}>
-                  <input id="f-name" type="text" value={data.name} onChange={set("name")} maxLength={100} placeholder="Marina Tavares" />
+                  <input
+                    id="f-name"
+                    type="text"
+                    value={data.name}
+                    onChange={set("name")}
+                    maxLength={100}
+                    placeholder="Marina Tavares"
+                  />
                 </Field>
                 <Field id="email" label="Email" error={errors.email}>
-                  <input id="f-email" type="email" value={data.email} onChange={set("email")} maxLength={255} placeholder="voce@empresa.com" />
+                  <input
+                    id="f-email"
+                    type="email"
+                    value={data.email}
+                    onChange={set("email")}
+                    maxLength={255}
+                    placeholder="voce@empresa.com"
+                  />
                 </Field>
                 <Field id="company" label="Empresa (opcional)" error={errors.company}>
-                  <input id="f-company" type="text" value={data.company} onChange={set("company")} maxLength={120} placeholder="Distribuidora XYZ" />
+                  <input
+                    id="f-company"
+                    type="text"
+                    value={data.company}
+                    onChange={set("company")}
+                    maxLength={120}
+                    placeholder="Distribuidora XYZ"
+                  />
                 </Field>
                 <Field id="location" label="Cidade / Estado" error={errors.location}>
-                  <input id="f-location" type="text" value={data.location} onChange={set("location")} maxLength={120} placeholder="São Paulo, SP" />
+                  <input
+                    id="f-location"
+                    type="text"
+                    value={data.location}
+                    onChange={set("location")}
+                    maxLength={120}
+                    placeholder="São Paulo, SP"
+                  />
                 </Field>
                 <Field id="role" label="Com o que você trabalha?" error={errors.role}>
-                  <input id="f-role" type="text" value={data.role} onChange={set("role")} maxLength={160} placeholder="Ex.: COO, dono de operação logística" />
+                  <input
+                    id="f-role"
+                    type="text"
+                    value={data.role}
+                    onChange={set("role")}
+                    maxLength={160}
+                    placeholder="Ex.: COO, dono de operação logística"
+                  />
                 </Field>
                 <Field id="industry" label="Setor" error={errors.industry}>
-                  <input id="f-industry" type="text" value={data.industry} onChange={set("industry")} maxLength={120} placeholder="Ex.: distribuição, saúde, educação" />
+                  <input
+                    id="f-industry"
+                    type="text"
+                    value={data.industry}
+                    onChange={set("industry")}
+                    maxLength={120}
+                    placeholder="Ex.: distribuição, saúde, educação"
+                  />
                 </Field>
                 <Field id="teamSize" label="Tamanho do time" error={errors.teamSize}>
                   <select id="f-teamSize" value={data.teamSize} onChange={set("teamSize")}>
@@ -151,16 +296,44 @@ function BriefingPage() {
 
               <FieldGroup title="Sobre o projeto">
                 <Field id="goal" label="Qual o objetivo do software?" error={errors.goal} full>
-                  <textarea id="f-goal" rows={4} value={data.goal} onChange={set("goal")} maxLength={2000}
-                    placeholder="Ex.: Quero um portal pros representantes verem comissão em tempo real e exportarem relatórios." />
+                  <textarea
+                    id="f-goal"
+                    rows={4}
+                    value={data.goal}
+                    onChange={set("goal")}
+                    maxLength={2000}
+                    placeholder="Ex.: Quero um portal pros representantes verem comissão em tempo real e exportarem relatórios."
+                  />
                 </Field>
-                <Field id="problem" label="Qual o problema atual / como vocês resolvem hoje?" error={errors.problem} full>
-                  <textarea id="f-problem" rows={4} value={data.problem} onChange={set("problem")} maxLength={2000}
-                    placeholder="Ex.: Hoje rodamos em 14 planilhas, cada gerente atualiza a sua, e o fechamento demora 5 dias." />
+                <Field
+                  id="problem"
+                  label="Qual o problema atual / como vocês resolvem hoje?"
+                  error={errors.problem}
+                  full
+                >
+                  <textarea
+                    id="f-problem"
+                    rows={4}
+                    value={data.problem}
+                    onChange={set("problem")}
+                    maxLength={2000}
+                    placeholder="Ex.: Hoje rodamos em 14 planilhas, cada gerente atualiza a sua, e o fechamento demora 5 dias."
+                  />
                 </Field>
-                <Field id="tools" label="Ferramentas / sistemas que precisam conversar (opcional)" error={errors.tools} full>
-                  <input id="f-tools" type="text" value={data.tools} onChange={set("tools")} maxLength={500}
-                    placeholder="Ex.: Bling, Omie, Google Sheets, WhatsApp" />
+                <Field
+                  id="tools"
+                  label="Ferramentas / sistemas que precisam conversar (opcional)"
+                  error={errors.tools}
+                  full
+                >
+                  <input
+                    id="f-tools"
+                    type="text"
+                    value={data.tools}
+                    onChange={set("tools")}
+                    maxLength={500}
+                    placeholder="Ex.: Bling, Omie, Google Sheets, WhatsApp"
+                  />
                 </Field>
                 <Field id="budget" label="Faixa de investimento" error={errors.budget}>
                   <select id="f-budget" value={data.budget} onChange={set("budget")}>
@@ -181,15 +354,32 @@ function BriefingPage() {
                     <option>Sem pressa</option>
                   </select>
                 </Field>
-                <Field id="notes" label="Algo mais que a gente precisa saber? (opcional)" error={errors.notes} full>
-                  <textarea id="f-notes" rows={3} value={data.notes} onChange={set("notes")} maxLength={2000}
-                    placeholder="Links de referência, restrições, regras de negócio..." />
+                <Field
+                  id="notes"
+                  label="Algo mais que a gente precisa saber? (opcional)"
+                  error={errors.notes}
+                  full
+                >
+                  <textarea
+                    id="f-notes"
+                    rows={3}
+                    value={data.notes}
+                    onChange={set("notes")}
+                    maxLength={2000}
+                    placeholder="Links de referência, restrições, regras de negócio..."
+                  />
                 </Field>
               </FieldGroup>
 
+              {sendError && <div className="crm-login-error">{sendError}</div>}
+
               <div className="brief-actions">
-                <button type="submit" className="btn btn-primary btn-large">Enviar briefing →</button>
-                <Link to="/" className="btn btn-secondary">Cancelar</Link>
+                <button type="submit" className="btn btn-primary btn-large" disabled={sending}>
+                  {sending ? "Enviando..." : "Enviar briefing →"}
+                </button>
+                <Link to="/" className="btn btn-secondary">
+                  Cancelar
+                </Link>
               </div>
             </form>
           )}
@@ -221,9 +411,24 @@ function FieldGroup({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-function Field({ id, label, error, full, children }: { id: string; label: string; error?: string; full?: boolean; children: React.ReactNode }) {
+function Field({
+  id,
+  label,
+  error,
+  full,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  full?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <label htmlFor={`f-${id}`} className={"brief-field" + (full ? " brief-field-full" : "") + (error ? " has-error" : "")}>
+    <label
+      htmlFor={`f-${id}`}
+      className={"brief-field" + (full ? " brief-field-full" : "") + (error ? " has-error" : "")}
+    >
       <span className="brief-label">{label}</span>
       {children}
       {error && <span className="brief-error">{error}</span>}

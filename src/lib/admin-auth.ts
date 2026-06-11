@@ -1,50 +1,36 @@
 // =====================================================
-// Autenticação simples do painel admin (CRM)
-// -----------------------------------------------------
-// ATENÇÃO: isto é uma proteção BÁSICA, feita 100% no navegador.
-// A senha abaixo fica visível no código do site, então NÃO é segura
-// contra alguém determinado. Serve pra esconder o painel do público.
-// Quando houver backend, troque por login de verdade no servidor.
+// Autenticação do painel admin — agora via Supabase Auth.
+// Login de verdade: e-mail/senha validados no servidor do Supabase,
+// sessão segura gerenciada pelo supabase-js.
 //
-// >>> Pra trocar email/senha de acesso, edite as duas constantes abaixo. <<<
+// >>> Pra criar/trocar usuários, use o painel do Supabase:
+//     Authentication > Users. <<<
 // =====================================================
 
-const ADMIN_EMAIL = "admin@productlab.local";
-const ADMIN_PASSWORD = "PLab#Admin@2026!";
+import { supabase } from "./supabase";
 
-const SESSION_KEY = "pl_admin_session";
-
-export interface AdminSession {
-  email: string;
-  at: number;
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
-export function login(email: string, password: string): boolean {
-  const ok =
-    email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() &&
-    password === ADMIN_PASSWORD;
-  if (ok && typeof window !== "undefined") {
-    const session: AdminSession = { email: ADMIN_EMAIL, at: Date.now() };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  }
-  return ok;
+export async function logout(): Promise<void> {
+  await supabase.auth.signOut();
 }
 
-export function logout(): void {
-  if (typeof window !== "undefined") localStorage.removeItem(SESSION_KEY);
+export async function getCurrentEmail(): Promise<string | null> {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user.email ?? null;
 }
 
-export function getSession(): AdminSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AdminSession;
-  } catch {
-    return null;
-  }
-}
-
-export function isAuthed(): boolean {
-  return getSession() !== null;
+export async function isAuthed(): Promise<boolean> {
+  const { data } = await supabase.auth.getSession();
+  return data.session !== null;
 }

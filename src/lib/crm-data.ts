@@ -1,10 +1,8 @@
 // =====================================================
-// Dados do CRM (mock / em memória)
-// -----------------------------------------------------
-// Como o projeto ainda não tem backend/banco, os dados abaixo são
-// fixos só pra o painel renderizar com números reais. Quando houver
-// API, troque estes arrays por dados vindos do servidor.
+// Dados do CRM — agora vindos do Supabase (tabelas leads e forms).
 // =====================================================
+
+import { supabase } from "./supabase";
 
 export const STAGES = [
   "Novo",
@@ -40,60 +38,95 @@ export interface FormEntry {
   createdAt: string; // ISO
 }
 
-// --- Leads iniciais (espelha o print: 1 lead, em "Qualificação") ---
-// Servem só como "semente": na primeira vez que o painel abre, viram a base.
-// Depois disso o estado real fica salvo no localStorage (ver load/saveLeads).
-export const seedLeads: Lead[] = [
-  {
-    id: "l1",
-    name: "Marina Tavares",
-    company: "Distribuidora XYZ",
-    email: "marina@xyz.com.br",
-    stage: "Qualificação",
-    value: 0,
-    createdAt: "2026-06-09T14:20:00Z",
-  },
-];
+// ===================== Mapeadores (linha do banco -> tipo) =====================
 
-// ---------- Persistência (localStorage) ----------
-const LEADS_KEY = "pl_crm_leads";
-
-export function loadLeads(): Lead[] {
-  if (typeof window === "undefined") return seedLeads;
-  const raw = localStorage.getItem(LEADS_KEY);
-  if (!raw) return seedLeads;
-  try {
-    const parsed = JSON.parse(raw) as Lead[];
-    return Array.isArray(parsed) ? parsed : seedLeads;
-  } catch {
-    return seedLeads;
-  }
+interface LeadRow {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  stage: Stage;
+  value: number | string | null;
+  created_at: string;
 }
 
-export function saveLeads(leads: Lead[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(LEADS_KEY, JSON.stringify(leads));
+interface FormRow {
+  id: string;
+  name: string;
+  email: string;
+  message: string | null;
+  is_new: boolean;
+  created_at: string;
 }
 
-// --- Formulários recebidos (espelha o print: 2 no total, 1 novo) ---
-export const forms: FormEntry[] = [
-  {
-    id: "f1",
-    name: "João Pereira",
-    email: "joao@empresa.com",
-    message: "Quero um portal pros representantes verem comissão em tempo real.",
-    isNew: true,
-    createdAt: "2026-06-10T09:05:00Z",
-  },
-  {
-    id: "f2",
-    name: "Carla Souza",
-    email: "carla@loja.com.br",
-    message: "Preciso integrar Bling + planilhas num painel só.",
-    isNew: false,
-    createdAt: "2026-06-08T16:40:00Z",
-  },
-];
+function rowToLead(r: LeadRow): Lead {
+  return {
+    id: r.id,
+    name: r.name,
+    company: r.company ?? "",
+    email: r.email ?? "",
+    stage: r.stage,
+    value: Number(r.value ?? 0),
+    createdAt: r.created_at,
+  };
+}
+
+function rowToForm(r: FormRow): FormEntry {
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    message: r.message ?? "",
+    isNew: r.is_new,
+    createdAt: r.created_at,
+  };
+}
+
+// ===================== Leads =====================
+
+export async function fetchLeads(): Promise<Lead[]> {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as LeadRow[]).map(rowToLead);
+}
+
+export async function updateLeadStage(id: string, stage: Stage): Promise<void> {
+  const { error } = await supabase.from("leads").update({ stage }).eq("id", id);
+  if (error) throw error;
+}
+
+// ===================== Forms (briefing) =====================
+
+export async function fetchForms(): Promise<FormEntry[]> {
+  const { data, error } = await supabase
+    .from("forms")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as FormRow[]).map(rowToForm);
+}
+
+export interface BriefingInput {
+  name: string;
+  email: string;
+  company?: string;
+  message?: string;
+  payload?: Record<string, unknown>;
+}
+
+export async function createForm(input: BriefingInput): Promise<void> {
+  const { error } = await supabase.from("forms").insert({
+    name: input.name,
+    email: input.email,
+    company: input.company ?? "",
+    message: input.message ?? "",
+    payload: input.payload ?? {},
+  });
+  if (error) throw error;
+}
 
 // ===================== Derivados =====================
 
@@ -109,12 +142,10 @@ export interface CrmSummary {
   conversion: number; // %
 }
 
-export function getSummary(leads: Lead[]): CrmSummary {
+export function getSummary(leads: Lead[], forms: FormEntry[]): CrmSummary {
   const totalLeads = leads.length;
   const newLeads = leads.filter((l) => l.stage === "Novo").length;
-  const inNegotiation = leads.filter((l) =>
-    NEGOTIATION_STAGES.includes(l.stage),
-  ).length;
+  const inNegotiation = leads.filter((l) => NEGOTIATION_STAGES.includes(l.stage)).length;
   const won = leads.filter((l) => l.stage === "Ganho");
   const estimatedValue = leads
     .filter((l) => l.stage !== "Perdido")

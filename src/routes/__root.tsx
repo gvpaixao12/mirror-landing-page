@@ -77,8 +77,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "GSolutions — Software sob medida" },
+      {
+        name: "description",
+        content: "Software sob medida, do briefing ao deploy em semanas.",
+      },
     ],
     links: [
       {
@@ -91,7 +94,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
-      { rel: "stylesheet", href: "/gsolutions.css?v=3" },
+      { rel: "stylesheet", href: "/gsolutions.css?v=4" },
     ],
   }),
   shellComponent: RootShell,

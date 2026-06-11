@@ -4,10 +4,7 @@ import { login, isAuthed } from "../lib/admin-auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [
-      { title: "Entrar — ProductLab CRM" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Entrar — GSolutions CRM" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: LoginPage,
 });
@@ -21,18 +18,24 @@ function LoginPage() {
 
   // Já logado? vai direto pro painel.
   useEffect(() => {
-    if (isAuthed()) navigate({ to: "/admin" });
+    let active = true;
+    isAuthed().then((authed) => {
+      if (active && authed) navigate({ to: "/admin" });
+    });
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const ok = login(email, password);
+    const { ok, error: err } = await login(email, password);
     if (ok) {
       navigate({ to: "/admin" });
     } else {
-      setError("Email ou senha inválidos.");
+      setError(err === "Invalid login credentials" ? "Email ou senha inválidos." : (err ?? "Falha ao entrar."));
       setLoading(false);
     }
   };
@@ -45,7 +48,7 @@ function LoginPage() {
       <form className="crm-login-card" onSubmit={onSubmit} noValidate>
         <div className="crm-brand crm-brand-lg">
           <span className="crm-brand-dot"></span>
-          <span className="crm-brand-name">ProductLab</span>
+          <span className="crm-brand-name">GSolutions</span>
           <span className="crm-brand-tag">CRM</span>
         </div>
 
@@ -58,7 +61,7 @@ function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="voce@productlab.local"
+            placeholder="voce@gsolutions.local"
             autoComplete="username"
             autoFocus
           />
