@@ -1,0 +1,403 @@
+/* =====================================================
+   Proposta comercial — estilo de documento A4 (print-ready)
+   -----------------------------------------------------
+   Tema CLARO (proposta impressa não deve ser dark: economiza
+   tinta e fica mais sério), com os acentos roxo/rosa da ProductLab
+   na capa e nos títulos. Otimizado pra "Salvar como PDF" do navegador.
+   ===================================================== */
+
+:root {
+  --p-purple: #7c3aed;
+  --p-pink: #db2777;
+  --p-grad: linear-gradient(135deg, #7c3aed, #db2777);
+  --p-ink: #1a1523;
+  --p-dim: #6b6478;
+  --p-line: #e6e1ec;
+  --p-bg-soft: #f7f5fb;
+  --p-paper: #ffffff;
+}
+
+.proposta-screen {
+  background: #2a2435;
+  min-height: 100vh;
+  padding: 32px 16px 80px;
+  font-family:
+    "Manrope",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  color: var(--p-ink);
+}
+
+/* Barra de ações — some na impressão */
+.proposta-toolbar {
+  position: sticky;
+  top: 16px;
+  z-index: 10;
+  max-width: 210mm;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(20, 16, 30, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid #3a3348;
+  border-radius: 12px;
+  color: #f2eef7;
+}
+
+.proposta-toolbar .pt-hint {
+  font-size: 13px;
+  color: #b7aec9;
+}
+
+.pt-btn {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--p-grad);
+  color: #fff;
+  font-size: 14px;
+}
+.pt-btn:hover {
+  opacity: 0.92;
+}
+.pt-btn--ghost {
+  background: transparent;
+  border: 1px solid #4a4358;
+  color: #e7e1f0;
+}
+
+/* Folha A4 */
+.proposta-page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 18px;
+  background: var(--p-paper);
+  color: var(--p-ink);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  padding: 22mm 20mm;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------- Capa ---------- */
+.proposta-cover {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.cover-band {
+  background: var(--p-grad);
+  color: #fff;
+  padding: 26mm 20mm;
+  position: relative;
+}
+.cover-brand {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: 15px;
+  opacity: 0.95;
+}
+.cover-tag {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+  max-width: 60%;
+}
+.cover-title {
+  margin-top: 48mm;
+  font-size: 34px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  max-width: 80%;
+}
+.cover-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+.cover-meta {
+  padding: 14mm 20mm;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 24px;
+}
+.cover-meta dt {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--p-dim);
+  font-weight: 700;
+}
+.cover-meta dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.cover-foot {
+  margin-top: auto;
+  padding: 0 20mm 14mm;
+  font-size: 12px;
+  color: var(--p-dim);
+}
+
+/* ---------- Seções de conteúdo ---------- */
+.sec {
+  margin-bottom: 30px;
+  break-inside: avoid;
+}
+.sec-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--p-line);
+}
+.sec-num {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 600;
+  font-size: 13px;
+  background: var(--p-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sec-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.sec p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #2e2838;
+  margin: 0 0 12px;
+}
+
+ul.checklist,
+ul.crosslist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+ul.checklist li,
+ul.crosslist li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+ul.checklist li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--p-purple);
+  font-weight: 800;
+}
+ul.crosslist li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--p-dim);
+  font-weight: 800;
+}
+
+/* Fases / timeline */
+.phase {
+  border: 1px solid var(--p-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  break-inside: avoid;
+}
+.phase-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.phase-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.phase-dur {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+  color: #fff;
+  background: var(--p-ink);
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.phase ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--p-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Investimento — opções */
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.opt {
+  border: 1px solid var(--p-line);
+  border-radius: 14px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  break-inside: avoid;
+}
+.opt--rec {
+  border-color: var(--p-purple);
+  box-shadow: 0 0 0 1px var(--p-purple) inset;
+  position: relative;
+}
+.opt-badge {
+  position: absolute;
+  top: -10px;
+  left: 14px;
+  background: var(--p-grad);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.opt-name {
+  font-weight: 800;
+  font-size: 15px;
+}
+.opt-price {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 8px 0;
+  background: var(--p-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.opt-desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--p-dim);
+}
+
+.pay-terms {
+  margin-top: 14px;
+  background: var(--p-bg-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.pay-terms strong {
+  color: var(--p-ink);
+}
+.pay-note {
+  font-size: 11.5px;
+  color: var(--p-dim);
+  margin-top: 6px;
+}
+
+/* Próximo passo — destaque */
+.next-step {
+  background: var(--p-grad);
+  color: #fff;
+  border-radius: 16px;
+  padding: 22px 24px;
+  break-inside: avoid;
+}
+.next-step h3 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+}
+.next-step p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.doc-foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px solid var(--p-line);
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--p-dim);
+}
+
+/* ---------- Impressão ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .proposta-screen {
+    background: #fff;
+    padding: 0;
+  }
+  .proposta-toolbar {
+    display: none !important;
+  }
+  .proposta-page {
+    box-shadow: none;
+    margin: 0;
+    width: 210mm;
+    min-height: 297mm;
+    page-break-after: always;
+  }
+  .proposta-page:last-child {
+    page-break-after: auto;
+  }
+  /* força as cores de fundo (gradiente da capa/CTA) saírem no PDF */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .proposta-page {
+    width: 100%;
+    padding: 24px 18px;
+  }
+  .options {
+    grid-template-columns: 1fr;
+  }
+  .cover-band,
+  .cover-meta,
+  .cover-foot {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}

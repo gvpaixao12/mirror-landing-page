@@ -1,0 +1,14 @@
+# Normaliza quebras de linha: o repo guarda LF e faz checkout em LF,
+# evitando o mar de erros "Delete ␍" do prettier no Windows.
+* text=auto eol=lf
+
+# Binários não devem ser tocados
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
