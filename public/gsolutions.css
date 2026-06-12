@@ -1638,3 +1638,170 @@ p {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================
+   ADMIN / CRM — CRUD: cabeçalho com ação, badges, ações,
+   status de formulário e modais
+   ===================================================== */
+
+/* ---------- Page head com botão/contador ---------- */
+.crm-pagehead-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.crm-pagehead-row > div:first-child { flex: 1; }
+.crm-head-btn {
+  padding: 12px 20px;
+  font-size: 14px;
+  flex: none;
+}
+.crm-count-badge {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  color: var(--purple);
+  font-weight: 700;
+  font-size: 14px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Ações em linha (tabelas / formulários) ---------- */
+.crm-row-actions { display: flex; gap: 14px; justify-content: flex-end; }
+.crm-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.crm-link:hover { color: var(--ink); }
+.crm-link-danger:hover { color: var(--pink); }
+
+/* ---------- Ações no card do Kanban ---------- */
+.crm-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.crm-card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s ease; }
+.crm-card:hover .crm-card-actions { opacity: 1; }
+.crm-card-actions button {
+  background: none;
+  border: none;
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+.crm-card-actions button:hover { color: var(--ink); background: var(--bg-2); }
+
+/* ---------- Status de formulário ---------- */
+.crm-status {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+}
+.crm-status-novo {
+  color: var(--purple);
+  background: rgba(167, 139, 250, 0.14);
+  border-color: rgba(167, 139, 250, 0.35);
+}
+.crm-status-convertido {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.crm-status-arquivado {
+  color: var(--dim);
+  background: var(--bg-3);
+  border-color: var(--border);
+}
+
+/* ---------- Modal ---------- */
+.crm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(8, 6, 12, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.crm-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-3));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+}
+.crm-modal-wide { max-width: 600px; }
+.crm-modal-title { font-size: 22px; }
+.crm-modal-head { display: flex; align-items: center; gap: 12px; }
+.crm-modal-sub { color: var(--dim); font-size: 13px; margin-top: -6px; }
+.crm-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.crm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+.crm-modal-actions .btn { padding: 12px 22px; font-size: 14px; }
+
+/* select/number herdam o estilo de .crm-field input */
+.crm-field select,
+.crm-field input[type="number"] {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 15px;
+  padding: 12px 14px;
+}
+.crm-field select:focus,
+.crm-field input[type="number"]:focus { outline: none; border-color: var(--purple); }
+
+/* ---------- Detalhes do formulário (Ver) ---------- */
+.crm-detail { display: flex; flex-direction: column; gap: 2px; }
+.crm-detail-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+}
+.crm-detail-row:last-child { border-bottom: none; }
+.crm-detail-label { font-size: 13px; color: var(--dim); font-weight: 600; }
+.crm-detail-value { font-size: 14px; color: var(--ink); white-space: pre-wrap; }
+
+@media (max-width: 520px) {
+  .crm-field-row { grid-template-columns: 1fr; }
+  .crm-detail-row { grid-template-columns: 1fr; gap: 2px; }
+}

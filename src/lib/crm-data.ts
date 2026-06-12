@@ -1,5 +1,5 @@
 // =====================================================
-// Dados do CRM — agora vindos do Supabase (tabelas leads e forms).
+// Dados do CRM — vindos do Supabase (tabelas leads e forms).
 // =====================================================
 
 import { supabase } from "./supabase";
@@ -19,6 +19,8 @@ export type Stage = (typeof STAGES)[number];
 // Etapas que contam como "em negociação" no resumo
 export const NEGOTIATION_STAGES: Stage[] = ["Proposta", "Negociação"];
 
+export type FormStatus = "novo" | "convertido" | "arquivado";
+
 export interface Lead {
   id: string;
   name: string;
@@ -33,8 +35,10 @@ export interface FormEntry {
   id: string;
   name: string;
   email: string;
+  company: string;
   message: string;
-  isNew: boolean;
+  payload: Record<string, unknown>;
+  status: FormStatus;
   createdAt: string; // ISO
 }
 
@@ -54,8 +58,10 @@ interface FormRow {
   id: string;
   name: string;
   email: string;
+  company: string | null;
   message: string | null;
-  is_new: boolean;
+  payload: Record<string, unknown> | null;
+  status: FormStatus;
   created_at: string;
 }
 
@@ -76,13 +82,23 @@ function rowToForm(r: FormRow): FormEntry {
     id: r.id,
     name: r.name,
     email: r.email,
+    company: r.company ?? "",
     message: r.message ?? "",
-    isNew: r.is_new,
+    payload: r.payload ?? {},
+    status: r.status,
     createdAt: r.created_at,
   };
 }
 
-// ===================== Leads =====================
+// ===================== Leads (CRUD) =====================
+
+export interface LeadInput {
+  name: string;
+  company: string;
+  email: string;
+  stage: Stage;
+  value: number;
+}
 
 export async function fetchLeads(): Promise<Lead[]> {
   const { data, error } = await supabase
@@ -93,8 +109,24 @@ export async function fetchLeads(): Promise<Lead[]> {
   return (data as LeadRow[]).map(rowToLead);
 }
 
+export async function createLead(input: LeadInput): Promise<Lead> {
+  const { data, error } = await supabase.from("leads").insert(input).select().single();
+  if (error) throw error;
+  return rowToLead(data as LeadRow);
+}
+
+export async function updateLead(id: string, input: LeadInput): Promise<void> {
+  const { error } = await supabase.from("leads").update(input).eq("id", id);
+  if (error) throw error;
+}
+
 export async function updateLeadStage(id: string, stage: Stage): Promise<void> {
   const { error } = await supabase.from("leads").update({ stage }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteLead(id: string): Promise<void> {
+  const { error } = await supabase.from("leads").delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -117,6 +149,7 @@ export interface BriefingInput {
   payload?: Record<string, unknown>;
 }
 
+// Insert público (usado pelo /briefing no site)
 export async function createForm(input: BriefingInput): Promise<void> {
   const { error } = await supabase.from("forms").insert({
     name: input.name,
@@ -126,6 +159,29 @@ export async function createForm(input: BriefingInput): Promise<void> {
     payload: input.payload ?? {},
   });
   if (error) throw error;
+}
+
+export async function setFormStatus(id: string, status: FormStatus): Promise<void> {
+  const { error } = await supabase.from("forms").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteForm(id: string): Promise<void> {
+  const { error } = await supabase.from("forms").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Converte um formulário em lead (cria no funil e marca como convertido)
+export async function convertFormToLead(form: FormEntry): Promise<Lead> {
+  const lead = await createLead({
+    name: form.name,
+    company: form.company,
+    email: form.email,
+    stage: "Novo",
+    value: 0,
+  });
+  await setFormStatus(form.id, "convertido");
+  return lead;
 }
 
 // ===================== Derivados =====================
@@ -158,7 +214,7 @@ export function getSummary(leads: Lead[], forms: FormEntry[]): CrmSummary {
     newLeads,
     inNegotiation,
     forms: forms.length,
-    newForms: forms.filter((f) => f.isNew).length,
+    newForms: forms.filter((f) => f.status === "novo").length,
     closedDeals: won.length,
     estimatedValue,
     closedValue,
@@ -189,3 +245,20 @@ export function formatDate(iso: string): string {
     year: "numeric",
   });
 }
+
+// Rótulos amigáveis dos campos do briefing (pra tela "Ver detalhes")
+export const BRIEFING_LABELS: Record<string, string> = {
+  name: "Nome",
+  email: "Email",
+  company: "Empresa",
+  location: "Cidade / Estado",
+  role: "Atuação",
+  industry: "Setor",
+  teamSize: "Tamanho do time",
+  goal: "Objetivo",
+  problem: "Problema atual",
+  tools: "Ferramentas",
+  budget: "Investimento",
+  timeline: "Prazo",
+  notes: "Observações",
+};

@@ -24,6 +24,7 @@ create table if not exists public.forms (
   message text default '',
   payload jsonb default '{}'::jsonb,
   is_new boolean not null default true,
+  status text not null default 'novo' check (status in ('novo','convertido','arquivado')),
   created_at timestamptz not null default now()
 );
 
