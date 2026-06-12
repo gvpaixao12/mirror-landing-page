@@ -4,7 +4,7 @@ import { login, isAuthed } from "../lib/admin-auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "Entrar — GSolutions CRM" }, { name: "robots", content: "noindex, nofollow" }],
+    meta: [{ title: "Entrar — ProductLab CRM" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: LoginPage,
 });
@@ -48,7 +48,7 @@ function LoginPage() {
       <form className="crm-login-card" onSubmit={onSubmit} noValidate>
         <div className="crm-brand crm-brand-lg">
           <span className="crm-brand-dot"></span>
-          <span className="crm-brand-name">GSolutions</span>
+          <span className="crm-brand-name">ProductLab</span>
           <span className="crm-brand-tag">CRM</span>
         </div>
 

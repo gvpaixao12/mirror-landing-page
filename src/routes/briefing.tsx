@@ -6,13 +6,13 @@ import { createForm } from "../lib/crm-data";
 export const Route = createFileRoute("/briefing")({
   head: () => ({
     meta: [
-      { title: "Briefing — GSolutions" },
+      { title: "Briefing — ProductLab" },
       {
         name: "description",
         content:
           "Conte sobre o software que você quer construir. Quanto mais detalhe, melhor a proposta.",
       },
-      { property: "og:title", content: "Briefing — GSolutions" },
+      { property: "og:title", content: "Briefing — ProductLab" },
       {
         property: "og:description",
         content: "Envie seu briefing e receba uma proposta sob medida em até 72h.",
@@ -155,7 +155,7 @@ function BriefingPage() {
                 </g>
               </svg>
             </span>
-            <span className="brand-name">GSolutions</span>
+            <span className="brand-name">ProductLab</span>
           </Link>
         </div>
       </header>
@@ -389,7 +389,7 @@ function BriefingPage() {
       <footer className="footer">
         <div className="container footer-inner">
           <div>
-            <div className="footer-brand">✦ GSolutions</div>
+            <div className="footer-brand">✦ ProductLab</div>
             <p>Seu software do jeito que você sempre pensou.</p>
           </div>
           <div className="footer-links">

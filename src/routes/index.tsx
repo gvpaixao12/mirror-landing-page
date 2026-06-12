@@ -6,9 +6,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "ProductLab — Software sob medida" },
-      { name: "description", content: "ProductLab — Software sob medida, do briefing ao deploy em semanas." },
+      {
+        name: "description",
+        content: "ProductLab — Software sob medida, do briefing ao deploy em semanas.",
+      },
       { property: "og:title", content: "ProductLab — Software sob medida" },
-      { property: "og:description", content: "Software sob medida, do briefing ao deploy em semanas." },
+      {
+        property: "og:description",
+        content: "Software sob medida, do briefing ao deploy em semanas.",
+      },
     ],
   }),
   component: Index,
@@ -67,17 +73,39 @@ function Index() {
             <span className="brand-mark" aria-hidden="true">
               <svg width="36" height="36" viewBox="0 0 64 64" fill="none">
                 <defs>
-                  <linearGradient id="plOrbitGrad" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                  <linearGradient
+                    id="plOrbitGrad"
+                    x1="6"
+                    y1="6"
+                    x2="58"
+                    y2="58"
+                    gradientUnits="userSpaceOnUse"
+                  >
                     <stop offset="0" stopColor="#A855F7" />
                     <stop offset="0.5" stopColor="#D14FBF" />
                     <stop offset="1" stopColor="#EC4899" />
                   </linearGradient>
                 </defs>
-                <circle cx="32" cy="32" r="19" fill="none" stroke="url(#plOrbitGrad)" strokeWidth="4.5" opacity="0.45" />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="19"
+                  fill="none"
+                  stroke="url(#plOrbitGrad)"
+                  strokeWidth="4.5"
+                  opacity="0.45"
+                />
                 <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGrad)" />
                 <g>
                   <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGrad)" />
-                  <animateTransform attributeName="transform" type="rotate" from="0 32 32" to="360 32 32" dur="7s" repeatCount="indefinite" />
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 32 32"
+                    to="360 32 32"
+                    dur="7s"
+                    repeatCount="indefinite"
+                  />
                 </g>
               </svg>
             </span>
@@ -95,15 +123,25 @@ function Index() {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <span></span><span></span><span></span>
+              <span></span>
+              <span></span>
+              <span></span>
             </button>
           </div>
         </div>
         <div className="nav-mobile" hidden={!menuOpen}>
-          <a href="#produto" onClick={closeMenu}>Produto</a>
-          <a href="#como" onClick={closeMenu}>Como funciona</a>
-          <a href="#cases" onClick={closeMenu}>Cases</a>
-          <a href="#cta" className="btn btn-primary" onClick={closeMenu}>Começar →</a>
+          <a href="#produto" onClick={closeMenu}>
+            Produto
+          </a>
+          <a href="#como" onClick={closeMenu}>
+            Como funciona
+          </a>
+          <a href="#cases" onClick={closeMenu}>
+            Cases
+          </a>
+          <a href="#cta" className="btn btn-primary" onClick={closeMenu}>
+            Começar →
+          </a>
         </div>
       </header>
 
@@ -117,14 +155,16 @@ function Index() {
               PRODUTO · SOFTWARE SOB MEDIDA
             </span>
             <h1 className="hero-title">
-              Seu problema<br />
-              vira <em className="grad-text">software</em><br />
+              Seu problema
+              <br />
+              vira <em className="grad-text">software</em>
+              <br />
               antes do próximo trimestre.
             </h1>
             <p className="hero-sub">
-              Esquece template e SaaS engessado. A gente escuta sua operação,
-              monta um squad enxuto, e entrega um software <i>seu</i> — pensado
-              pro seu fluxo, conectado às suas ferramentas.
+              Esquece template e SaaS engessado. A gente escuta sua operação, monta um squad enxuto,
+              e entrega um software <i>seu</i> — pensado pro seu fluxo, conectado às suas
+              ferramentas.
             </p>
             <div className="hero-video-wrap">
               <div className="hero-video" aria-label="Espaço reservado para vídeo">
@@ -139,12 +179,16 @@ function Index() {
                 <strong>Sprint 3 entregue</strong>
               </div>
               <p>Módulo de relatórios + integração Bling prontos pra teste.</p>
-              <div className="progress"><div className="progress-bar"></div></div>
+              <div className="progress">
+                <div className="progress-bar"></div>
+              </div>
               <small>78% do projeto</small>
             </div>
             <div className="float-card card-brief">
               <div className="mono-tag">// briefing.md</div>
-              <p className="quote">"Preciso de um portal pros 80 representantes verem comissão em tempo real"</p>
+              <p className="quote">
+                "Preciso de um portal pros 80 representantes verem comissão em tempo real"
+              </p>
               <span className="status-chip">EM ESCOPO</span>
             </div>
           </div>
@@ -155,8 +199,14 @@ function Index() {
         <div className="container">
           <div className="section-head">
             <div>
-              <span className="pill"><span className="pill-dot"></span>COMO FUNCIONA</span>
-              <h2>Rápido, claro,<br />seu desde o dia 1.</h2>
+              <span className="pill">
+                <span className="pill-dot"></span>COMO FUNCIONA
+              </span>
+              <h2>
+                Rápido, claro,
+                <br />
+                seu desde o dia 1.
+              </h2>
             </div>
             <p className="section-lead">
               Sem contratos periódicos. O processo é desenhado pra você sentir progresso rápido.
@@ -164,12 +214,32 @@ function Index() {
           </div>
           <div className="feature-grid">
             {[
-              ["01", "Briefing relâmpago", "Preencha sua ideia em nosso formulário. Fale com um agente e desenhamos o escopo na tela junto."],
-              ["02", "Proposta em 72h", "Preço fechado, prazo fechado, marcos fechados. Sem surpresa no caminho."],
-              ["03", "Sprints semanais", "Toda sexta uma versão rodando. Você testa, dá feedback, ajustamos."],
-              ["04", "Tudo seu", "Repositório seu. Infra na sua conta. Documentação completa. Nada de lock-in."],
+              [
+                "01",
+                "Briefing relâmpago",
+                "Preencha sua ideia em nosso formulário. Fale com um agente e desenhamos o escopo na tela junto.",
+              ],
+              [
+                "02",
+                "Proposta em 72h",
+                "Preço fechado, prazo fechado, marcos fechados. Sem surpresa no caminho.",
+              ],
+              [
+                "03",
+                "Sprints semanais",
+                "Toda sexta uma versão rodando. Você testa, dá feedback, ajustamos.",
+              ],
+              [
+                "04",
+                "Tudo seu",
+                "Repositório seu. Infra na sua conta. Documentação completa. Nada de lock-in.",
+              ],
               ["05", "Suporte", "A gente fica à disposição para atender bugs e realizar ajustes."],
-              ["06", "Evolução contínua", "Quer continuar evoluindo? Pacote mensal opcional. Quer só usar? Beleza também."],
+              [
+                "06",
+                "Evolução contínua",
+                "Quer continuar evoluindo? Pacote mensal opcional. Quer só usar? Beleza também.",
+              ],
             ].map(([n, t, d]) => (
               <article className="feature-card" key={n}>
                 <span className="feature-num">{n}</span>
@@ -190,16 +260,21 @@ function Index() {
       <section className="cta" id="cta">
         <div className="cta-glow" aria-hidden="true"></div>
         <div className="container cta-inner">
-          <span className="pill"><span className="pill-dot"></span>vamos começar?</span>
+          <span className="pill">
+            <span className="pill-dot"></span>vamos começar?
+          </span>
           <h2 className="cta-title">
-            Conta sua dor.<br />
-            A gente devolve em <em className="grad-text">código.</em>
+            Conta sua dor.
+            <br />A gente devolve em <em className="grad-text">código.</em>
           </h2>
           <p className="cta-sub">
-            45 minutos de conversa. Zero compromisso.<br className="show-mobile" />
+            45 minutos de conversa. Zero compromisso.
+            <br className="show-mobile" />
             Você sai da call sabendo se faz sentido.
           </p>
-          <Link to="/briefing" className="btn btn-primary btn-large">Criar um orçamento →</Link>
+          <Link to="/briefing" className="btn btn-primary btn-large">
+            Criar um orçamento →
+          </Link>
         </div>
       </section>
 
@@ -207,15 +282,36 @@ function Index() {
         <div className="container footer-inner">
           <div>
             <div className="footer-brand">
-              <svg width="18" height="18" viewBox="0 0 64 64" fill="none" style={{ verticalAlign: "middle", marginRight: 6 }}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 64 64"
+                fill="none"
+                style={{ verticalAlign: "middle", marginRight: 6 }}
+              >
                 <defs>
-                  <linearGradient id="plOrbitGradFooter" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                  <linearGradient
+                    id="plOrbitGradFooter"
+                    x1="6"
+                    y1="6"
+                    x2="58"
+                    y2="58"
+                    gradientUnits="userSpaceOnUse"
+                  >
                     <stop offset="0" stopColor="#A855F7" />
                     <stop offset="0.5" stopColor="#D14FBF" />
                     <stop offset="1" stopColor="#EC4899" />
                   </linearGradient>
                 </defs>
-                <circle cx="32" cy="32" r="19" fill="none" stroke="url(#plOrbitGradFooter)" strokeWidth="4.5" opacity="0.45" />
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="19"
+                  fill="none"
+                  stroke="url(#plOrbitGradFooter)"
+                  strokeWidth="4.5"
+                  opacity="0.45"
+                />
                 <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGradFooter)" />
                 <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGradFooter)" />
               </svg>
@@ -236,12 +332,14 @@ function Index() {
 
 const CASES = [
   {
-    quote: '"Com a organização do meu estoque no sistema, ficou muito mais fácil! Consegui inclusive aumentar meu faturamento."',
+    quote:
+      '"Com a organização do meu estoque no sistema, ficou muito mais fácil! Consegui inclusive aumentar meu faturamento."',
     name: "Giovanna G.",
     role: "Logista na Mundo Pet",
   },
   {
-    quote: '"Minha apresentação comercial ficou mais dinâmica e interativa. Está mais visual para o cliente, muito mais fácil de gerar valor."',
+    quote:
+      '"Minha apresentação comercial ficou mais dinâmica e interativa. Está mais visual para o cliente, muito mais fácil de gerar valor."',
     name: "Rafael M.",
     role: "Technik",
   },
@@ -255,12 +353,7 @@ function CaseCarousel() {
     <div className="case-card">
       <div className="case-glow case-glow-1" aria-hidden="true"></div>
       <div className="case-glow case-glow-2" aria-hidden="true"></div>
-      <button
-        type="button"
-        className="case-next"
-        aria-label="Próximo case"
-        onClick={next}
-      >
+      <button type="button" className="case-next" aria-label="Próximo case" onClick={next}>
         →
       </button>
       <div className="case-content">
