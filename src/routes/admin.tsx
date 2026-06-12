@@ -22,7 +22,17 @@ import {
   formatBRL,
   formatDate,
   BRIEFING_LABELS,
+  type Proposta,
+  type PropostaInput,
+  type PropostaStatus,
+  PROPOSTA_STATUSES,
+  fetchPropostas,
+  createProposta,
+  updateProposta,
+  deleteProposta,
+  nextPropostaNumber,
 } from "../lib/crm-data";
+import { buildProposal } from "../lib/proposal-data";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -50,6 +60,7 @@ function AdminPage() {
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [forms, setForms] = useState<FormEntry[]>([]);
+  const [propostas, setPropostas] = useState<Proposta[]>([]);
   const [loadError, setLoadError] = useState("");
 
   // Modais
@@ -58,6 +69,10 @@ function AdminPage() {
     lead: null,
   });
   const [viewingForm, setViewingForm] = useState<FormEntry | null>(null);
+  const [propostaModal, setPropostaModal] = useState<{ open: boolean; proposta: Proposta | null }>({
+    open: false,
+    proposta: null,
+  });
 
   // Proteção de rota + carga inicial dos dados.
   useEffect(() => {
@@ -76,6 +91,14 @@ function AdminPage() {
         setForms(fs);
       } catch (e) {
         if (active) setLoadError(e instanceof Error ? e.message : "Falha ao carregar dados.");
+      }
+      // Propostas em try separado: se a tabela ainda não existir (rodar
+      // supabase-setup.sql), o resto do painel continua funcionando.
+      try {
+        const ps = await fetchPropostas();
+        if (active) setPropostas(ps);
+      } catch {
+        /* tabela propostas ausente — ignora */
       }
       if (active) setReady(true);
     })();
@@ -150,6 +173,33 @@ function AdminPage() {
     }
   };
 
+  // ---- Propostas ----
+  const saveProposta = async (input: PropostaInput) => {
+    if (propostaModal.proposta) {
+      await updateProposta(propostaModal.proposta.id, input);
+      setPropostas((cur) =>
+        cur.map((p) => (p.id === propostaModal.proposta!.id ? { ...p, ...input } : p)),
+      );
+    } else {
+      const created = await createProposta(input);
+      setPropostas((cur) => [created, ...cur]);
+    }
+    setPropostaModal({ open: false, proposta: null });
+  };
+
+  const removeProposta = async (id: string) => {
+    if (!confirm("Excluir esta proposta? Esta ação não pode ser desfeita.")) return;
+    const prev = propostas;
+    setPropostas((cur) => cur.filter((p) => p.id !== id));
+    try {
+      await deleteProposta(id);
+    } catch {
+      setPropostas(prev);
+    }
+  };
+
+  const openPdf = (id: string) => window.open(`/proposta?id=${id}`, "_blank");
+
   const onLogout = async () => {
     await logout();
     navigate({ to: "/login" });
@@ -220,7 +270,13 @@ function AdminPage() {
           <ClientesView leads={leads} onEdit={(l) => setLeadModal({ open: true, lead: l })} onDelete={removeLead} />
         )}
         {view === "propostas" && (
-          <PropostasView leads={leads} onEdit={(l) => setLeadModal({ open: true, lead: l })} onDelete={removeLead} />
+          <PropostasView
+            propostas={propostas}
+            onNew={() => setPropostaModal({ open: true, proposta: null })}
+            onEdit={(p) => setPropostaModal({ open: true, proposta: p })}
+            onDelete={removeProposta}
+            onPdf={openPdf}
+          />
         )}
         {view === "formularios" && (
           <FormulariosView
@@ -241,6 +297,14 @@ function AdminPage() {
       )}
       {viewingForm && (
         <FormView form={viewingForm} onClose={() => setViewingForm(null)} onConvert={convertForm} />
+      )}
+      {propostaModal.open && (
+        <PropostaModal
+          proposta={propostaModal.proposta}
+          existing={propostas}
+          onClose={() => setPropostaModal({ open: false, proposta: null })}
+          onSave={saveProposta}
+        />
       )}
     </div>
   );
@@ -451,29 +515,47 @@ function ClientesView({
 // ===================== Propostas =====================
 
 function PropostasView({
-  leads,
+  propostas,
+  onNew,
   onEdit,
   onDelete,
+  onPdf,
 }: {
-  leads: Lead[];
-  onEdit: (l: Lead) => void;
+  propostas: Proposta[];
+  onNew: () => void;
+  onEdit: (p: Proposta) => void;
   onDelete: (id: string) => void;
+  onPdf: (id: string) => void;
 }) {
-  const props = leads.filter((l) => l.stage === "Proposta" || l.stage === "Negociação");
   return (
     <>
-      <PageHead title="Propostas" subtitle="Leads com proposta enviada ou em negociação." />
+      <PageHead
+        title="Propostas"
+        subtitle="Crie, edite e exporte propostas comerciais em PDF."
+        action={{ label: "+ Nova proposta", onClick: onNew }}
+      />
       <Table
-        head={["Nome", "Empresa", "Etapa", "Valor", "Enviada", ""]}
-        rows={props.map((l) => [
-          l.name,
-          l.company,
-          <StageTag key={l.id} stage={l.stage} />,
-          formatBRL(l.value),
-          formatDate(l.createdAt),
-          <RowActions key={`a-${l.id}`} onEdit={() => onEdit(l)} onDelete={() => onDelete(l.id)} />,
+        head={["Número", "Cliente", "Empresa", "Data", "Valor", "Status", ""]}
+        rows={propostas.map((p) => [
+          <strong key={`n-${p.id}`}>{p.number}</strong>,
+          p.clientName,
+          p.company || "—",
+          formatDate(p.createdAt),
+          formatBRL(p.value),
+          <PropostaStatusTag key={`s-${p.id}`} status={p.status} />,
+          <div className="crm-row-actions" key={`a-${p.id}`}>
+            <button className="crm-link" onClick={() => onPdf(p.id)}>
+              PDF
+            </button>
+            <button className="crm-link" onClick={() => onEdit(p)}>
+              Editar
+            </button>
+            <button className="crm-link crm-link-danger" onClick={() => onDelete(p.id)}>
+              Excluir
+            </button>
+          </div>,
         ])}
-        empty="Nenhuma proposta em aberto."
+        empty="Nenhuma proposta ainda. Clique em “+ Nova proposta”."
       />
     </>
   );
@@ -715,6 +797,185 @@ function FormView({
   );
 }
 
+function PropostaModal({
+  proposta,
+  existing,
+  onClose,
+  onSave,
+}: {
+  proposta: Proposta | null;
+  existing: Proposta[];
+  onClose: () => void;
+  onSave: (input: PropostaInput) => Promise<void>;
+}) {
+  const c = proposta?.content;
+  const [clientName, setClientName] = useState(proposta?.clientName ?? "");
+  const [company, setCompany] = useState(proposta?.company ?? "");
+  const [title, setTitle] = useState(c?.title ?? "");
+  const [value, setValue] = useState(proposta?.value ?? 0);
+  const [status, setStatus] = useState<PropostaStatus>(proposta?.status ?? "Rascunho");
+  const [understanding, setUnderstanding] = useState(c?.understanding.intro ?? "");
+  const [solution, setSolution] = useState(c?.solution.intro ?? "");
+  const [scopeText, setScopeText] = useState((c?.scope.included ?? []).join("\n"));
+  const [nextStep, setNextStep] = useState(c?.nextStep ?? "");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName.trim()) {
+      setErr("Informe o cliente.");
+      return;
+    }
+    if (!title.trim()) {
+      setErr("Informe o título do projeto.");
+      return;
+    }
+    setSaving(true);
+    setErr("");
+    const number = proposta ? proposta.number : nextPropostaNumber(existing);
+    const content = buildProposal({
+      number,
+      clientName: clientName.trim(),
+      company: company.trim(),
+      title: title.trim(),
+      value,
+      understanding,
+      solution,
+      scope: scopeText.split("\n"),
+      nextStep,
+      date: proposta?.content.date,
+      validUntil: proposta?.content.validUntil,
+    });
+    try {
+      await onSave({
+        number,
+        clientName: clientName.trim(),
+        company: company.trim(),
+        value,
+        status,
+        content,
+      });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Falha ao salvar.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="crm-modal-overlay" onClick={onClose}>
+      <form
+        className="crm-modal crm-modal-wide"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+      >
+        <h3 className="crm-modal-title">
+          {proposta ? `Editar ${proposta.number}` : "Nova proposta"}
+        </h3>
+
+        <div className="crm-field-row">
+          <label className="crm-field">
+            <span className="crm-field-label">Cliente</span>
+            <input
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Nome do contato"
+              autoFocus
+            />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">Empresa</span>
+            <input
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Empresa"
+            />
+          </label>
+        </div>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Título do projeto</span>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex.: Portal de Representantes"
+          />
+        </label>
+
+        <div className="crm-field-row">
+          <label className="crm-field">
+            <span className="crm-field-label">Valor (R$)</span>
+            <input
+              type="number"
+              min={0}
+              value={value}
+              onChange={(e) => setValue(Number(e.target.value) || 0)}
+            />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">Status</span>
+            <select value={status} onChange={(e) => setStatus(e.target.value as PropostaStatus)}>
+              {PROPOSTA_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="crm-field">
+          <span className="crm-field-label">O que entendemos (problema do cliente)</span>
+          <textarea
+            rows={3}
+            value={understanding}
+            onChange={(e) => setUnderstanding(e.target.value)}
+            placeholder="Resuma a dor do cliente nas palavras dele."
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">Nossa solução</span>
+          <textarea
+            rows={3}
+            value={solution}
+            onChange={(e) => setSolution(e.target.value)}
+            placeholder="O que será entregue, focado no resultado."
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">Escopo (um item por linha)</span>
+          <textarea
+            rows={4}
+            value={scopeText}
+            onChange={(e) => setScopeText(e.target.value)}
+            placeholder={"Login individual\nDashboard de comissão\nIntegração com o Bling"}
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">Próximo passo (opcional)</span>
+          <textarea
+            rows={2}
+            value={nextStep}
+            onChange={(e) => setNextStep(e.target.value)}
+            placeholder="Deixe em branco pra usar o texto padrão."
+          />
+        </label>
+
+        {err && <div className="crm-login-error">{err}</div>}
+
+        <div className="crm-modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? "Salvando..." : "Salvar proposta"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ===================== Reutilizáveis =====================
 
 function PageHead({
@@ -769,6 +1030,18 @@ function StageTag({ stage }: { stage: Stage }) {
 function FormStatusTag({ status }: { status: FormStatus }) {
   const label = status === "novo" ? "Novo" : status === "convertido" ? "Convertido" : "Arquivado";
   return <span className={`crm-status crm-status-${status}`}>{label}</span>;
+}
+
+// Reaproveita as cores dos status de formulário pros status de proposta.
+const PSTATUS_CLASS: Record<PropostaStatus, string> = {
+  Rascunho: "crm-status-arquivado",
+  Enviada: "crm-status-novo",
+  Aceita: "crm-status-convertido",
+  Recusada: "crm-status-arquivado",
+};
+
+function PropostaStatusTag({ status }: { status: PropostaStatus }) {
+  return <span className={`crm-status ${PSTATUS_CLASS[status]}`}>{status}</span>;
 }
 
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {

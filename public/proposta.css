@@ -17,6 +17,14 @@
   --p-paper: #ffffff;
 }
 
+.proposta-msg {
+  max-width: 210mm;
+  margin: 40px auto;
+  text-align: center;
+  color: #c9c2da;
+  font-size: 15px;
+}
+
 .proposta-screen {
   background: #2a2435;
   min-height: 100vh;

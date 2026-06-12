@@ -1773,9 +1773,10 @@ p {
 }
 .crm-modal-actions .btn { padding: 12px 22px; font-size: 14px; }
 
-/* select/number herdam o estilo de .crm-field input */
+/* select/number/textarea herdam o estilo de .crm-field input */
 .crm-field select,
-.crm-field input[type="number"] {
+.crm-field input[type="number"],
+.crm-field textarea {
   width: 100%;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -1785,8 +1786,14 @@ p {
   font-size: 15px;
   padding: 12px 14px;
 }
+.crm-field textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.5;
+}
 .crm-field select:focus,
-.crm-field input[type="number"]:focus { outline: none; border-color: var(--purple); }
+.crm-field input[type="number"]:focus,
+.crm-field textarea:focus { outline: none; border-color: var(--purple); }
 
 /* ---------- Detalhes do formulário (Ver) ---------- */
 .crm-detail { display: flex; flex-direction: column; gap: 2px; }

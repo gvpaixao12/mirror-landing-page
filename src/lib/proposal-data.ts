@@ -76,6 +76,66 @@ export function formatLongDate(iso: string): string {
 
 export { formatBRL };
 
+// ===================== Builder =====================
+// Monta um Proposal completo a partir dos campos do formulário do CRM,
+// preenchendo o resto com os padrões da ProductLab.
+
+export const PRODUCTLAB_VENDOR: Proposal["vendor"] = {
+  name: "ProductLab",
+  tagline: "Software sob medida pra empresas que cresceram além das planilhas.",
+  email: "contato@productlab.com.br",
+  phone: "(11) 99999-9999",
+  site: "productlab.com.br",
+};
+
+export const DEFAULT_WHY = [
+  "Foco em software sob medida B2B — feito pra como a sua empresa trabalha, não um template genérico.",
+  "Entrega por fases: você vê valor antes de pagar tudo.",
+  "Suporte incluído e código que fica com você.",
+  "Comunicação direta com quem desenvolve, sem atravessador.",
+];
+
+export interface BuildProposalArgs {
+  number: string;
+  clientName: string;
+  company: string;
+  title: string;
+  value: number;
+  understanding?: string; // problema do cliente
+  solution?: string; // o que será entregue
+  scope?: string[]; // bullets do escopo
+  nextStep?: string;
+  date?: string; // ISO — preserva o original ao editar
+  validUntil?: string; // ISO
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+
+export function buildProposal(a: BuildProposalArgs): Proposal {
+  const date = a.date ?? new Date().toISOString();
+  const validUntil = a.validUntil ?? new Date(Date.now() + 14 * DAY).toISOString();
+  return {
+    number: a.number,
+    date,
+    validUntil,
+    client: { name: a.clientName, company: a.company },
+    vendor: PRODUCTLAB_VENDOR,
+    title: a.title,
+    understanding: { intro: a.understanding?.trim() ?? "", bullets: [] },
+    solution: { intro: a.solution?.trim() ?? "", capabilities: [] },
+    scope: { included: (a.scope ?? []).filter((s) => s.trim() !== ""), excluded: [] },
+    phases: [],
+    investment: {
+      options: [{ name: "Investimento", description: "", price: a.value, recommended: true }],
+      paymentTerms: "50% na aprovação e 50% na entrega. Pix, boleto ou cartão.",
+    },
+    why: DEFAULT_WHY,
+    nextStep:
+      a.nextStep?.trim() ||
+      "Para seguirmos, basta responder aprovando a proposta até a data de validade. Em seguida agendamos o kickoff.",
+  };
+}
+
 // ===================== Exemplo =====================
 // ProductLab → Distribuidora XYZ (lead "Marina Tavares" do CRM).
 // Reflete o pedido recebido no formulário: portal de representantes

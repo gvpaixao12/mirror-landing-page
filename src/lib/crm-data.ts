@@ -3,6 +3,7 @@
 // =====================================================
 
 import { supabase } from "./supabase";
+import type { Proposal } from "./proposal-data";
 
 export const STAGES = [
   "Novo",
@@ -182,6 +183,119 @@ export async function convertFormToLead(form: FormEntry): Promise<Lead> {
   });
   await setFormStatus(form.id, "convertido");
   return lead;
+}
+
+// ===================== Propostas (CRUD) =====================
+
+export const PROPOSTA_STATUSES = ["Rascunho", "Enviada", "Aceita", "Recusada"] as const;
+export type PropostaStatus = (typeof PROPOSTA_STATUSES)[number];
+
+export interface Proposta {
+  id: string;
+  number: string; // PROP-2026-0001
+  clientName: string;
+  company: string;
+  value: number; // R$ (valor de destaque que aparece na lista)
+  status: PropostaStatus;
+  content: Proposal; // conteúdo completo usado pra renderizar o PDF
+  createdAt: string; // ISO
+}
+
+export interface PropostaInput {
+  number: string;
+  clientName: string;
+  company: string;
+  value: number;
+  status: PropostaStatus;
+  content: Proposal;
+}
+
+interface PropostaRow {
+  id: string;
+  number: string;
+  client_name: string;
+  company: string | null;
+  value: number | string | null;
+  status: PropostaStatus;
+  content: Proposal;
+  created_at: string;
+}
+
+function rowToProposta(r: PropostaRow): Proposta {
+  return {
+    id: r.id,
+    number: r.number,
+    clientName: r.client_name,
+    company: r.company ?? "",
+    value: Number(r.value ?? 0),
+    status: r.status,
+    content: r.content,
+    createdAt: r.created_at,
+  };
+}
+
+export async function fetchPropostas(): Promise<Proposta[]> {
+  const { data, error } = await supabase
+    .from("propostas")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as PropostaRow[]).map(rowToProposta);
+}
+
+export async function fetchPropostaById(id: string): Promise<Proposta | null> {
+  const { data, error } = await supabase.from("propostas").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ? rowToProposta(data as PropostaRow) : null;
+}
+
+export async function createProposta(input: PropostaInput): Promise<Proposta> {
+  const { data, error } = await supabase
+    .from("propostas")
+    .insert({
+      number: input.number,
+      client_name: input.clientName,
+      company: input.company,
+      value: input.value,
+      status: input.status,
+      content: input.content,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return rowToProposta(data as PropostaRow);
+}
+
+export async function updateProposta(id: string, input: PropostaInput): Promise<void> {
+  const { error } = await supabase
+    .from("propostas")
+    .update({
+      client_name: input.clientName,
+      company: input.company,
+      value: input.value,
+      status: input.status,
+      content: input.content,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteProposta(id: string): Promise<void> {
+  const { error } = await supabase.from("propostas").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Gera o próximo número (PROP-ANO-0001) a partir das propostas já existentes.
+export function nextPropostaNumber(existing: Proposta[]): string {
+  const year = new Date().getFullYear();
+  const prefix = `PROP-${year}-`;
+  const maxSeq = existing
+    .map((p) => p.number)
+    .filter((n) => n.startsWith(prefix))
+    .map((n) => parseInt(n.slice(prefix.length), 10))
+    .filter((n) => !Number.isNaN(n))
+    .reduce((m, n) => Math.max(m, n), 0);
+  return `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
 }
 
 // ===================== Derivados =====================

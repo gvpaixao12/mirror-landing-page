@@ -28,9 +28,28 @@ create table if not exists public.forms (
   created_at timestamptz not null default now()
 );
 
+-- ---------- PROPOSTAS ----------
+create table if not exists public.propostas (
+  id uuid primary key default gen_random_uuid(),
+  number text not null,
+  client_name text not null,
+  company text default '',
+  value numeric not null default 0,
+  status text not null default 'Rascunho'
+    check (status in ('Rascunho','Enviada','Aceita','Recusada')),
+  content jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 -- ---------- RLS ----------
 alter table public.leads enable row level security;
 alter table public.forms enable row level security;
+alter table public.propostas enable row level security;
+
+-- Propostas: somente usuários autenticados (equipe logada)
+drop policy if exists "propostas_auth_all" on public.propostas;
+create policy "propostas_auth_all" on public.propostas
+  for all to authenticated using (true) with check (true);
 
 -- Leads: somente usuários autenticados (equipe logada)
 drop policy if exists "leads_auth_all" on public.leads;
