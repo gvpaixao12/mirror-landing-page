@@ -114,6 +114,10 @@ p {
   color: transparent;
   font-style: italic;
   font-weight: 700;
+  /* itálico + background-clip:text corta a última letra à direita;
+     estende a caixa do recorte sem mexer no layout do texto seguinte */
+  padding-right: 0.08em;
+  margin-right: -0.08em;
 }
 
 /* ============ BUTTONS ============ */
