@@ -167,9 +167,16 @@ function Index() {
               ferramentas.
             </p>
             <div className="hero-video-wrap">
-              <div className="hero-video" aria-label="Espaço reservado para vídeo">
-                <span>Vídeo em breve</span>
-              </div>
+              <video
+                className="hero-video"
+                src="/site-video.mp4"
+                autoPlay
+                muted
+                loop
+                playsInline
+                controls
+                preload="metadata"
+              />
             </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
