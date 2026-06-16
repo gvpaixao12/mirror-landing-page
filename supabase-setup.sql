@@ -28,6 +28,18 @@ create table if not exists public.forms (
   created_at timestamptz not null default now()
 );
 
+-- ---------- CLIENTES ----------
+create table if not exists public.clientes (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  company text default '',
+  email text default '',
+  phone text default '',
+  city text default '',
+  uf text default '',
+  created_at timestamptz not null default now()
+);
+
 -- ---------- PROPOSTAS ----------
 create table if not exists public.propostas (
   id uuid primary key default gen_random_uuid(),
@@ -45,6 +57,12 @@ create table if not exists public.propostas (
 alter table public.leads enable row level security;
 alter table public.forms enable row level security;
 alter table public.propostas enable row level security;
+alter table public.clientes enable row level security;
+
+-- Clientes: somente usuários autenticados (equipe logada)
+drop policy if exists "clientes_auth_all" on public.clientes;
+create policy "clientes_auth_all" on public.clientes
+  for all to authenticated using (true) with check (true);
 
 -- Propostas: somente usuários autenticados (equipe logada)
 drop policy if exists "propostas_auth_all" on public.propostas;

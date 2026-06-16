@@ -1711,6 +1711,20 @@ p {
   align-items: center;
   justify-content: center;
 }
+.crm-search {
+  flex: none;
+  width: 220px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  padding: 11px 14px;
+  transition: border-color 0.15s ease;
+}
+.crm-search::placeholder { color: var(--dim); }
+.crm-search:focus { outline: none; border-color: var(--purple); }
 
 /* ---------- Ações em linha (tabelas / formulários) ---------- */
 .crm-row-actions { display: flex; gap: 14px; justify-content: flex-end; }

@@ -131,6 +131,77 @@ export async function deleteLead(id: string): Promise<void> {
   if (error) throw error;
 }
 
+// ===================== Clientes (CRUD) =====================
+
+export interface Cliente {
+  id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  city: string;
+  uf: string;
+  createdAt: string; // ISO
+}
+
+export interface ClienteInput {
+  name: string;
+  company: string;
+  email: string;
+  phone: string;
+  city: string;
+  uf: string;
+}
+
+interface ClienteRow {
+  id: string;
+  name: string;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  uf: string | null;
+  created_at: string;
+}
+
+function rowToCliente(r: ClienteRow): Cliente {
+  return {
+    id: r.id,
+    name: r.name,
+    company: r.company ?? "",
+    email: r.email ?? "",
+    phone: r.phone ?? "",
+    city: r.city ?? "",
+    uf: r.uf ?? "",
+    createdAt: r.created_at,
+  };
+}
+
+export async function fetchClientes(): Promise<Cliente[]> {
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as ClienteRow[]).map(rowToCliente);
+}
+
+export async function createCliente(input: ClienteInput): Promise<Cliente> {
+  const { data, error } = await supabase.from("clientes").insert(input).select().single();
+  if (error) throw error;
+  return rowToCliente(data as ClienteRow);
+}
+
+export async function updateCliente(id: string, input: ClienteInput): Promise<void> {
+  const { error } = await supabase.from("clientes").update(input).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteCliente(id: string): Promise<void> {
+  const { error } = await supabase.from("clientes").delete().eq("id", id);
+  if (error) throw error;
+}
+
 // ===================== Forms (briefing) =====================
 
 export async function fetchForms(): Promise<FormEntry[]> {

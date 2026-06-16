@@ -8,8 +8,14 @@ import {
   type LeadInput,
   type FormEntry,
   type FormStatus,
+  type Cliente,
+  type ClienteInput,
   fetchLeads,
   fetchForms,
+  fetchClientes,
+  createCliente,
+  updateCliente,
+  deleteCliente,
   createLead,
   updateLead,
   updateLeadStage,
@@ -61,12 +67,17 @@ function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [forms, setForms] = useState<FormEntry[]>([]);
   const [propostas, setPropostas] = useState<Proposta[]>([]);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loadError, setLoadError] = useState("");
 
   // Modais
   const [leadModal, setLeadModal] = useState<{ open: boolean; lead: Lead | null }>({
     open: false,
     lead: null,
+  });
+  const [clienteModal, setClienteModal] = useState<{ open: boolean; cliente: Cliente | null }>({
+    open: false,
+    cliente: null,
   });
   const [viewingForm, setViewingForm] = useState<FormEntry | null>(null);
   const [propostaModal, setPropostaModal] = useState<{ open: boolean; proposta: Proposta | null }>({
@@ -99,6 +110,13 @@ function AdminPage() {
         if (active) setPropostas(ps);
       } catch {
         /* tabela propostas ausente — ignora */
+      }
+      // Clientes em try separado: idem propostas (rodar supabase-setup.sql).
+      try {
+        const cs = await fetchClientes();
+        if (active) setClientes(cs);
+      } catch {
+        /* tabela clientes ausente — ignora */
       }
       if (active) setReady(true);
     })();
@@ -137,6 +155,31 @@ function AdminPage() {
       await deleteLead(id);
     } catch {
       setLeads(prev);
+    }
+  };
+
+  // ---- Clientes ----
+  const saveCliente = async (input: ClienteInput) => {
+    if (clienteModal.cliente) {
+      await updateCliente(clienteModal.cliente.id, input);
+      setClientes((cur) =>
+        cur.map((c) => (c.id === clienteModal.cliente!.id ? { ...c, ...input } : c)),
+      );
+    } else {
+      const created = await createCliente(input);
+      setClientes((cur) => [created, ...cur]);
+    }
+    setClienteModal({ open: false, cliente: null });
+  };
+
+  const removeCliente = async (id: string) => {
+    if (!confirm("Excluir este cliente? Esta ação não pode ser desfeita.")) return;
+    const prev = clientes;
+    setClientes((cur) => cur.filter((c) => c.id !== id));
+    try {
+      await deleteCliente(id);
+    } catch {
+      setClientes(prev);
     }
   };
 
@@ -267,7 +310,12 @@ function AdminPage() {
           />
         )}
         {view === "clientes" && (
-          <ClientesView leads={leads} onEdit={(l) => setLeadModal({ open: true, lead: l })} onDelete={removeLead} />
+          <ClientesView
+            clientes={clientes}
+            onNew={() => setClienteModal({ open: true, cliente: null })}
+            onEdit={(c) => setClienteModal({ open: true, cliente: c })}
+            onDelete={removeCliente}
+          />
         )}
         {view === "propostas" && (
           <PropostasView
@@ -293,6 +341,13 @@ function AdminPage() {
           lead={leadModal.lead}
           onClose={() => setLeadModal({ open: false, lead: null })}
           onSave={saveLead}
+        />
+      )}
+      {clienteModal.open && (
+        <ClienteModal
+          cliente={clienteModal.cliente}
+          onClose={() => setClienteModal({ open: false, cliente: null })}
+          onSave={saveCliente}
         />
       )}
       {viewingForm && (
@@ -484,29 +539,51 @@ function LeadsView({
 // ===================== Clientes =====================
 
 function ClientesView({
-  leads,
+  clientes,
+  onNew,
   onEdit,
   onDelete,
 }: {
-  leads: Lead[];
-  onEdit: (l: Lead) => void;
+  clientes: Cliente[];
+  onNew: () => void;
+  onEdit: (c: Cliente) => void;
   onDelete: (id: string) => void;
 }) {
-  const clientes = leads.filter((l) => l.stage === "Ganho");
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? clientes.filter((c) =>
+        [c.name, c.company, c.email, c.phone, c.city, c.uf].join(" ").toLowerCase().includes(q),
+      )
+    : clientes;
+
   return (
     <>
-      <PageHead title="Clientes" subtitle="Negócios já fechados (status ganho)." />
+      <PageHead
+        title="Clientes"
+        subtitle="Base de clientes ativos e contatos comerciais."
+        action={{ label: "+ Novo cliente", onClick: onNew }}
+        extra={
+          <input
+            className="crm-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar..."
+          />
+        }
+      />
       <Table
-        head={["Nome", "Empresa", "Email", "Valor", "Fechado em", ""]}
-        rows={clientes.map((l) => [
-          l.name,
-          l.company,
-          l.email,
-          formatBRL(l.value),
-          formatDate(l.createdAt),
-          <RowActions key={`a-${l.id}`} onEdit={() => onEdit(l)} onDelete={() => onDelete(l.id)} />,
+        head={["Nome", "Empresa", "E-mail", "Telefone", "Cidade/UF", "Criado em", ""]}
+        rows={filtered.map((c) => [
+          c.name,
+          c.company || "—",
+          c.email || "—",
+          c.phone || "—",
+          [c.city, c.uf].filter(Boolean).join("/") || "—",
+          formatDate(c.createdAt),
+          <RowActions key={`a-${c.id}`} onEdit={() => onEdit(c)} onDelete={() => onDelete(c.id)} />,
         ])}
-        empty="Ainda nenhum cliente fechado."
+        empty="Nenhum cliente cadastrado."
       />
     </>
   );
@@ -720,6 +797,120 @@ function LeadModal({
               min={0}
               value={form.value}
               onChange={(e) => setForm({ ...form, value: Number(e.target.value) || 0 })}
+            />
+          </label>
+        </div>
+
+        {err && <div className="crm-login-error">{err}</div>}
+
+        <div className="crm-modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button type="submit" className="btn btn-primary" disabled={saving}>
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function ClienteModal({
+  cliente,
+  onClose,
+  onSave,
+}: {
+  cliente: Cliente | null;
+  onClose: () => void;
+  onSave: (input: ClienteInput) => Promise<void>;
+}) {
+  const [form, setForm] = useState<ClienteInput>(
+    cliente
+      ? {
+          name: cliente.name,
+          company: cliente.company,
+          email: cliente.email,
+          phone: cliente.phone,
+          city: cliente.city,
+          uf: cliente.uf,
+        }
+      : { name: "", company: "", email: "", phone: "", city: "", uf: "" },
+  );
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setErr("Informe o nome.");
+      return;
+    }
+    setSaving(true);
+    setErr("");
+    try {
+      await onSave({ ...form, uf: form.uf.toUpperCase() });
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Falha ao salvar.");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="crm-modal-overlay" onClick={onClose}>
+      <form className="crm-modal" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <h3 className="crm-modal-title">{cliente ? "Editar cliente" : "Novo cliente"}</h3>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Nome</span>
+          <input
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            placeholder="Nome do contato"
+            autoFocus
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">Empresa</span>
+          <input
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+            placeholder="Empresa"
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">E-mail</span>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            placeholder="email@empresa.com"
+          />
+        </label>
+        <label className="crm-field">
+          <span className="crm-field-label">Telefone</span>
+          <input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            placeholder="(00) 00000-0000"
+          />
+        </label>
+        <div className="crm-field-row">
+          <label className="crm-field">
+            <span className="crm-field-label">Cidade</span>
+            <input
+              value={form.city}
+              onChange={(e) => setForm({ ...form, city: e.target.value })}
+              placeholder="Cidade"
+            />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">UF</span>
+            <input
+              value={form.uf}
+              maxLength={2}
+              onChange={(e) => setForm({ ...form, uf: e.target.value })}
+              placeholder="UF"
             />
           </label>
         </div>
@@ -983,11 +1174,13 @@ function PageHead({
   subtitle,
   action,
   count,
+  extra,
 }: {
   title: string;
   subtitle: string;
   action?: { label: string; onClick: () => void };
   count?: number;
+  extra?: React.ReactNode;
 }) {
   return (
     <div className="crm-pagehead crm-pagehead-row">
@@ -996,6 +1189,7 @@ function PageHead({
         <p>{subtitle}</p>
       </div>
       {typeof count === "number" && <span className="crm-count-badge">{count}</span>}
+      {extra}
       {action && (
         <button className="btn btn-primary crm-head-btn" onClick={action.onClick}>
           {action.label}
