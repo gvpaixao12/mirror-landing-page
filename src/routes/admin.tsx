@@ -411,6 +411,17 @@ function DashboardView({ leads, forms }: { leads: Lead[]; forms: FormEntry[] }) 
   );
 }
 
+// Slug por etapa pra colorir o cabeçalho de cada coluna do Kanban.
+const STAGE_SLUG: Record<Stage, string> = {
+  Novo: "novo",
+  Qualificação: "qualificacao",
+  Reunião: "reuniao",
+  Proposta: "proposta",
+  Negociação: "negociacao",
+  Ganho: "ganho",
+  Perdido: "perdido",
+};
+
 // ===================== Kanban (drag & drop) =====================
 
 function KanbanView({
@@ -457,7 +468,7 @@ function KanbanView({
               }}
               onDrop={() => onDrop(stage)}
             >
-              <div className="crm-kanban-head">
+              <div className={`crm-kanban-head crm-kanban-head--${STAGE_SLUG[stage]}`}>
                 <span>{stage}</span>
                 <span className="crm-badge">{cards.length}</span>
               </div>

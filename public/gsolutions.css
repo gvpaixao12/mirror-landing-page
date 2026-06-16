@@ -1478,9 +1478,41 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--ink);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 7px 11px;
+  border-radius: 8px;
+  color: var(--stage-color, var(--ink));
+  border: 1px solid color-mix(in srgb, var(--stage-color, var(--border)) 45%, transparent);
+  background: color-mix(in srgb, var(--stage-color, var(--bg-3)) 12%, var(--bg-2));
+}
+.crm-kanban-head .crm-badge {
+  color: var(--stage-color, var(--dim));
+  border-color: color-mix(in srgb, var(--stage-color, var(--border)) 45%, transparent);
+  background: color-mix(in srgb, var(--stage-color, var(--bg-3)) 16%, var(--bg-3));
+}
+.crm-kanban-head--novo {
+  --stage-color: #60a5fa;
+}
+.crm-kanban-head--qualificacao {
+  --stage-color: #a78bfa;
+}
+.crm-kanban-head--reuniao {
+  --stage-color: #f472b6;
+}
+.crm-kanban-head--proposta {
+  --stage-color: #f59e0b;
+}
+.crm-kanban-head--negociacao {
+  --stage-color: #fb923c;
+}
+.crm-kanban-head--ganho {
+  --stage-color: #34d399;
+}
+.crm-kanban-head--perdido {
+  --stage-color: #f87171;
 }
 .crm-kanban-body {
   display: flex;
