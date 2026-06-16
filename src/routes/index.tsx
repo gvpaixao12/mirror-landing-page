@@ -382,7 +382,7 @@ function Index() {
             <p>Seu software do jeito que você sempre pensou.</p>
           </div>
           <div className="footer-links">
-            <a href="mailto:contato@gsolutions.com">contato@gsolutions.com</a>
+            <a href="mailto:productlab.software@gmail.com">productlab.software@gmail.com</a>
             <span>Brasil</span>
             <span>© 2026</span>
           </div>
