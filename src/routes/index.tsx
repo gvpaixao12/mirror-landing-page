@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,6 +22,16 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const playVideo = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = false;
+    v.play();
+    setVideoPlaying(true);
+  };
 
   useEffect(() => {
     const spot = document.getElementById("spotlight");
@@ -167,16 +177,61 @@ function Index() {
               ferramentas.
             </p>
             <div className="hero-video-wrap">
-              <video
-                className="hero-video"
-                src="/site-video.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                preload="metadata"
-              />
+              <div className="hero-video-frame">
+                <video
+                  ref={videoRef}
+                  className="hero-video"
+                  src="/site-video.mp4"
+                  playsInline
+                  preload="metadata"
+                  controls={videoPlaying}
+                  onEnded={() => setVideoPlaying(false)}
+                />
+                {!videoPlaying && (
+                  <button
+                    type="button"
+                    className="hero-video-cover"
+                    onClick={playVideo}
+                    aria-label="Reproduzir vídeo"
+                  >
+                    <span className="hero-video-logo" aria-hidden="true">
+                      <svg width="56" height="56" viewBox="0 0 64 64" fill="none">
+                        <defs>
+                          <linearGradient
+                            id="plVideoGrad"
+                            x1="6"
+                            y1="6"
+                            x2="58"
+                            y2="58"
+                            gradientUnits="userSpaceOnUse"
+                          >
+                            <stop offset="0" stopColor="#A855F7" />
+                            <stop offset="0.5" stopColor="#D14FBF" />
+                            <stop offset="1" stopColor="#EC4899" />
+                          </linearGradient>
+                        </defs>
+                        <circle
+                          cx="32"
+                          cy="32"
+                          r="19"
+                          fill="none"
+                          stroke="url(#plVideoGrad)"
+                          strokeWidth="4.5"
+                          opacity="0.45"
+                        />
+                        <circle cx="32" cy="32" r="6.5" fill="url(#plVideoGrad)" />
+                        <circle cx="32" cy="13" r="5.5" fill="url(#plVideoGrad)" />
+                      </svg>
+                    </span>
+                    <span className="hero-video-brand grad-text">ProductLab</span>
+                    <span className="hero-video-play" aria-hidden="true">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M8 5.5v13l11-6.5L8 5.5z" fill="#fff" />
+                      </svg>
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
