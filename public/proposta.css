@@ -271,6 +271,9 @@ ul.crosslist li::before {
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
+.options--single {
+  grid-template-columns: 1fr;
+}
 .opt {
   border: 1px solid var(--p-line);
   border-radius: 14px;
@@ -315,6 +318,32 @@ ul.crosslist li::before {
   font-size: 12.5px;
   line-height: 1.5;
   color: var(--p-dim);
+}
+
+.opt-items {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--p-line);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.opt-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.opt-item-label {
+  color: var(--p-ink);
+}
+.opt-item-obs {
+  color: var(--p-dim);
+}
+.opt-item-price {
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .pay-terms {

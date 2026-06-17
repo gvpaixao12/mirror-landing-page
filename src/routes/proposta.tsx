@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { fetchPropostaById } from "../lib/crm-data";
-import { sampleProposal, formatBRL, formatLongDate, type Proposal } from "../lib/proposal-data";
+import {
+  sampleProposal,
+  formatBRL,
+  formatLongDate,
+  getAddonScopeBullets,
+  type Proposal,
+} from "../lib/proposal-data";
 
 export const Route = createFileRoute("/proposta")({
   validateSearch: (search: Record<string, unknown>): { id?: string } => ({
@@ -107,14 +113,16 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
     });
   }
 
-  if (p.scope.included.length > 0 || p.scope.excluded.length > 0) {
+  const includedScope = [...p.scope.included, ...getAddonScopeBullets(p)];
+
+  if (includedScope.length > 0 || p.scope.excluded.length > 0) {
     blocks.push({
       title: "Escopo do projeto",
       body: (
         <>
-          {p.scope.included.length > 0 && (
+          {includedScope.length > 0 && (
             <ul className="checklist">
-              {p.scope.included.map((s, i) => (
+              {includedScope.map((s, i) => (
                 <li key={i}>{s}</li>
               ))}
             </ul>
@@ -162,7 +170,7 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
       title: "Investimento",
       body: (
         <>
-          <div className="options">
+          <div className={`options${p.investment.options.length === 1 ? " options--single" : ""}`}>
             {p.investment.options.map((o, i) => (
               <div className={`opt${o.recommended ? " opt--rec" : ""}`} key={i}>
                 {o.recommended && p.investment.options.length > 1 && (
@@ -171,6 +179,21 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
                 <span className="opt-name">{o.name}</span>
                 <span className="opt-price">{formatBRL(o.price)}</span>
                 {o.description && <span className="opt-desc">{o.description}</span>}
+                {o.items && o.items.length > 1 && (
+                  <ul className="opt-items">
+                    {o.items.map((it, j) => (
+                      <li key={j}>
+                        <span className="opt-item-label">
+                          {it.label}
+                          {it.observation && (
+                            <span className="opt-item-obs"> — {it.observation}</span>
+                          )}
+                        </span>
+                        <span className="opt-item-price">{formatBRL(it.price)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>

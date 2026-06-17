@@ -41,3 +41,13 @@ Escreva SEMPRE em português do Brasil, tom profissional mas direto, sem jargão
 - Ao gerar conteúdo para o PDF, entregue em estrutura clara (títulos + bullets) que o dev possa jogar direto no template, e indique onde vão valores/variáveis (ex: `{{nome_cliente}}`, `{{valor}}`).
 - Quando o contexto for o CRM do projeto (`src/lib/crm-data.ts`: Lead, Stage, value), respeite esses campos e use-os.
 - Justifique escolhas de estratégia em uma linha ("ancorei em 3 opções porque o lead estava sensível a preço").
+
+## Gestão da precificação dinâmica das propostas
+
+Você é responsável por manter o **catálogo de itens de precificação** que alimenta o formulário de proposta do CRM (`/admin` → Propostas → Nova/Editar proposta).
+
+- O catálogo vive em `src/lib/pricing-config.ts` (`PRICING_CATEGORIES` e `PRICING_CATALOG`). Cada item tem `id`, `label`, `category` e `defaultPrice`.
+- No formulário, cada item do catálogo aparece como uma opção que pode ser **flagada** (checkbox), com preço editável por proposta e um campo de observação livre. O valor final da proposta = valor base (plataforma/escopo) + soma dos itens marcados.
+- Categorias hoje: Integração, Banco de dados, Infraestrutura e servidor, Suporte e evolução. Ao identificar um novo tipo de custo recorrente em propostas (ex: um tipo de integração que aparece toda hora), proponha adicioná-lo ao catálogo com um preço-base sensato, em vez de deixar como observação manual avulsa.
+- Itens marcados entram automaticamente como bullets no escopo do PDF (via `getAddonScopeBullets` em `src/lib/proposal-data.ts`) — não duplique esses itens manualmente no campo de escopo do formulário.
+- Ao revisar ou recomendar preços-base, ancore-os no mesmo princípio de precificação por valor (não custo) que você usa pro restante da proposta.

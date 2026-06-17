@@ -9,11 +9,27 @@
 
 import { formatBRL } from "./crm-data";
 
+export interface InvestmentItem {
+  id?: string; // id do catálogo (src/lib/pricing-config.ts) — presente só em itens adicionais (addons)
+  label: string;
+  price: number; // R$
+  observation?: string;
+}
+
 export interface InvestmentOption {
   name: string;
   description: string;
   price: number; // R$ total
   recommended?: boolean;
+  items?: InvestmentItem[]; // detalhamento: 1º item é o valor base, os demais são addons marcados
+}
+
+// Seleção de um item do catálogo de precificação dentro do formulário da proposta.
+export interface PricingSelection {
+  id: string; // id do catálogo
+  label: string;
+  price: number; // pode ter sido ajustado pelo vendedor em relação ao defaultPrice
+  observation?: string;
 }
 
 export interface ScopePhase {
@@ -76,6 +92,17 @@ export function formatLongDate(iso: string): string {
 
 export { formatBRL };
 
+// Extrai, de uma proposta já montada, os bullets de escopo gerados pelos
+// itens adicionais marcados (addons) — usado pra exibir no PDF sem duplicar
+// dados (o texto manual do escopo fica só com o que o vendedor digitou).
+export function getAddonScopeBullets(p: Proposal): string[] {
+  const items =
+    p.investment.options.find((o) => o.recommended)?.items ?? p.investment.options[0]?.items ?? [];
+  return items
+    .filter((it) => it.id)
+    .map((it) => (it.observation ? `${it.label} — ${it.observation}` : it.label));
+}
+
 // ===================== Builder =====================
 // Monta um Proposal completo a partir dos campos do formulário do CRM,
 // preenchendo o resto com os padrões da ProductLab.
@@ -100,10 +127,11 @@ export interface BuildProposalArgs {
   clientName: string;
   company: string;
   title: string;
-  value: number;
+  baseValue: number; // valor base (plataforma/escopo principal)
+  addons?: PricingSelection[]; // itens adicionais marcados (Integração, banco de dados, infra...)
   understanding?: string; // problema do cliente
   solution?: string; // o que será entregue
-  scope?: string[]; // bullets do escopo
+  scope?: string[]; // bullets do escopo (manual)
   nextStep?: string;
   date?: string; // ISO — preserva o original ao editar
   validUntil?: string; // ISO
@@ -114,6 +142,17 @@ const DAY = 24 * 60 * 60 * 1000;
 export function buildProposal(a: BuildProposalArgs): Proposal {
   const date = a.date ?? new Date().toISOString();
   const validUntil = a.validUntil ?? new Date(Date.now() + 14 * DAY).toISOString();
+  const addons = a.addons ?? [];
+  const items: InvestmentItem[] = [
+    { label: "Plataforma (escopo base)", price: a.baseValue },
+    ...addons.map((ad) => ({
+      id: ad.id,
+      label: ad.label,
+      price: ad.price,
+      observation: ad.observation,
+    })),
+  ];
+  const total = items.reduce((sum, it) => sum + it.price, 0);
   return {
     number: a.number,
     date,
@@ -126,7 +165,7 @@ export function buildProposal(a: BuildProposalArgs): Proposal {
     scope: { included: (a.scope ?? []).filter((s) => s.trim() !== ""), excluded: [] },
     phases: [],
     investment: {
-      options: [{ name: "Investimento", description: "", price: a.value, recommended: true }],
+      options: [{ name: "Investimento", description: "", price: total, recommended: true, items }],
       paymentTerms: "50% na aprovação e 50% na entrega. Pix, boleto ou cartão.",
     },
     why: DEFAULT_WHY,
