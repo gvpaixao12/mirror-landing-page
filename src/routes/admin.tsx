@@ -10,12 +10,14 @@ import {
   type FormStatus,
   type Cliente,
   type ClienteInput,
+  type ClienteStatus,
   fetchLeads,
   fetchForms,
   fetchClientes,
   createCliente,
   updateCliente,
   deleteCliente,
+  convertLeadToCliente,
   createLead,
   updateLead,
   updateLeadStage,
@@ -27,6 +29,7 @@ import {
   getFunnel,
   formatBRL,
   formatDate,
+  formatDateTime,
   BRIEFING_LABELS,
   type Proposta,
   type PropostaInput,
@@ -37,10 +40,18 @@ import {
   updateProposta,
   deleteProposta,
   setPropostaLead,
+  setPropostaArchived,
   nextPropostaNumber,
 } from "../lib/crm-data";
 import { buildProposal, type PricingSelection } from "../lib/proposal-data";
-import { PRICING_CATALOG, PRICING_CATEGORIES } from "../lib/pricing-config";
+import {
+  PRICING_CATALOG,
+  PRICING_CATEGORIES,
+  PAYMENT_METHODS,
+  DEFAULT_PAYMENT_METHODS,
+  PAYMENT_CONDITIONS,
+  DEFAULT_PAYMENT_CONDITION,
+} from "../lib/pricing-config";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -87,6 +98,9 @@ function AdminPage() {
     proposta: null,
   });
   const [accountModal, setAccountModal] = useState(false);
+  // Confirmação ao mover um lead para Ganho/Perdido (vira cliente e sai do funil).
+  const [confirmMove, setConfirmMove] = useState<{ lead: Lead; stage: Stage } | null>(null);
+  const [moving, setMoving] = useState(false);
 
   // Proteção de rota + carga inicial dos dados.
   useEffect(() => {
@@ -136,12 +150,38 @@ function AdminPage() {
 
   // ---- Leads ----
   const moveLead = async (id: string, stage: Stage) => {
+    // Ganho/Perdido: pede confirmação — ao confirmar, o lead vira cliente e
+    // sai do funil (some do Kanban e passa a aparecer só na tela de Clientes).
+    if (stage === "Ganho" || stage === "Perdido") {
+      const lead = leads.find((l) => l.id === id);
+      if (lead && lead.stage !== stage) setConfirmMove({ lead, stage });
+      return;
+    }
     const prev = leads;
     setLeads((cur) => cur.map((l) => (l.id === id ? { ...l, stage } : l)));
     try {
       await updateLeadStage(id, stage);
     } catch {
       setLeads(prev);
+    }
+  };
+
+  // Confirma a movimentação para Ganho/Perdido: cria o cliente e remove o lead.
+  const confirmConvertLead = async () => {
+    if (!confirmMove) return;
+    const { lead, stage } = confirmMove;
+    const status: ClienteStatus = stage === "Ganho" ? "ganho" : "perdido";
+    setMoving(true);
+    try {
+      const created = await convertLeadToCliente(lead, status);
+      await deleteLead(lead.id);
+      setClientes((cur) => [created, ...cur]);
+      setLeads((cur) => cur.filter((l) => l.id !== lead.id));
+      setConfirmMove(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Falha ao converter o lead em cliente.");
+    } finally {
+      setMoving(false);
     }
   };
 
@@ -245,6 +285,17 @@ function AdminPage() {
     setPropostas((cur) => cur.filter((p) => p.id !== id));
     try {
       await deleteProposta(id);
+    } catch {
+      setPropostas(prev);
+    }
+  };
+
+  // Arquiva/desarquiva uma proposta (sai da lista de ativas).
+  const archiveProposta = async (id: string, archived: boolean) => {
+    const prev = propostas;
+    setPropostas((cur) => cur.map((p) => (p.id === id ? { ...p, archived } : p)));
+    try {
+      await setPropostaArchived(id, archived);
     } catch {
       setPropostas(prev);
     }
@@ -358,9 +409,12 @@ function AdminPage() {
         {view === "leads" && (
           <LeadsView
             leads={leads}
+            propostas={propostas}
             onEdit={(l) => setLeadModal({ open: true, lead: l })}
             onDelete={removeLead}
             onNew={() => setLeadModal({ open: true, lead: null })}
+            onPdf={openPdf}
+            onLink={linkProposta}
           />
         )}
         {view === "clientes" && (
@@ -379,6 +433,7 @@ function AdminPage() {
               onEdit={(p) => setPropostaModal({ open: true, proposta: p })}
               onDelete={removeProposta}
               onPdf={openPdf}
+              onArchive={archiveProposta}
             />
             <ProposalChatWidget />
           </>
@@ -415,11 +470,27 @@ function AdminPage() {
           proposta={propostaModal.proposta}
           existing={propostas}
           leads={leads}
+          clientes={clientes}
           onClose={() => setPropostaModal({ open: false, proposta: null })}
           onSave={saveProposta}
         />
       )}
       {accountModal && <AccountModal onClose={() => setAccountModal(false)} />}
+      {confirmMove && (
+        <ConfirmModal
+          title={confirmMove.stage === "Ganho" ? "Marcar como Ganho?" : "Marcar como Perdido?"}
+          message={
+            confirmMove.stage === "Ganho"
+              ? `“${confirmMove.lead.name}” será movido para a base de Clientes como negócio ganho e sairá do funil do Kanban.`
+              : `“${confirmMove.lead.name}” será movido para a base de Clientes como perdido e sairá do funil do Kanban.`
+          }
+          confirmLabel={moving ? "Movendo..." : "Confirmar"}
+          danger={confirmMove.stage === "Perdido"}
+          busy={moving}
+          onConfirm={confirmConvertLead}
+          onCancel={() => !moving && setConfirmMove(null)}
+        />
+      )}
     </div>
   );
 }
@@ -751,15 +822,24 @@ function LeadDetailModal({
 
 function LeadsView({
   leads,
+  propostas,
   onEdit,
   onDelete,
   onNew,
+  onPdf,
+  onLink,
 }: {
   leads: Lead[];
+  propostas: Proposta[];
   onEdit: (l: Lead) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  onPdf: (id: string) => void;
+  onLink: (propostaId: string, leadId: string | null) => void;
 }) {
+  // Lead aberto no painel de propostas (vincular/desvincular).
+  const [detail, setDetail] = useState<Lead | null>(null);
+
   return (
     <>
       <PageHead
@@ -768,18 +848,47 @@ function LeadsView({
         action={{ label: "+ Novo lead", onClick: onNew }}
       />
       <Table
-        head={["Nome", "Empresa", "Email", "Etapa", "Valor", "Criado", ""]}
-        rows={leads.map((l) => [
-          l.name,
-          l.company,
-          l.email,
-          <StageTag key={l.id} stage={l.stage} />,
-          formatBRL(l.value),
-          formatDate(l.createdAt),
-          <RowActions key={`a-${l.id}`} onEdit={() => onEdit(l)} onDelete={() => onDelete(l.id)} />,
-        ])}
+        head={["Nome", "Empresa", "Email", "Etapa", "Valor", "Proposta", "Criado", ""]}
+        rows={leads.map((l) => {
+          const count = propostasForLead(l, propostas).length;
+          return [
+            l.name,
+            l.company,
+            l.email,
+            <StageTag key={l.id} stage={l.stage} />,
+            formatBRL(l.value),
+            <PropostaLinkTag key={`p-${l.id}`} count={count} />,
+            formatDate(l.createdAt),
+            <div className="crm-row-actions" key={`a-${l.id}`}>
+              <button className="crm-link" onClick={() => setDetail(l)}>
+                {count > 0 ? "Propostas" : "Vincular"}
+              </button>
+              <button className="crm-link" onClick={() => onEdit(l)}>
+                Editar
+              </button>
+              <button className="crm-link crm-link-danger" onClick={() => onDelete(l.id)}>
+                Excluir
+              </button>
+            </div>,
+          ];
+        })}
         empty="Nenhum lead cadastrado."
       />
+
+      {detail && (
+        <LeadDetailModal
+          lead={detail}
+          propostas={propostas}
+          onClose={() => setDetail(null)}
+          onEdit={() => {
+            const l = detail;
+            setDetail(null);
+            onEdit(l);
+          }}
+          onPdf={onPdf}
+          onLink={onLink}
+        />
+      )}
     </>
   );
 }
@@ -798,12 +907,19 @@ function ClientesView({
   onDelete: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<"todos" | ClienteStatus>("todos");
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? clientes.filter((c) =>
-        [c.name, c.company, c.email, c.phone, c.city, c.uf].join(" ").toLowerCase().includes(q),
-      )
-    : clientes;
+  const filtered = clientes.filter((c) => {
+    if (filter !== "todos" && c.status !== filter) return false;
+    if (!q) return true;
+    return [c.name, c.company, c.email, c.phone, c.city, c.uf].join(" ").toLowerCase().includes(q);
+  });
+  // Coluna "Última interação" só faz sentido para os perdidos (follow-up).
+  const showInteraction = filter !== "ganho";
+
+  const head = ["Nome", "Empresa", "E-mail", "Telefone", "Cidade/UF", "Situação"];
+  if (showInteraction) head.push("Última interação");
+  head.push("Criado em", "");
 
   return (
     <>
@@ -812,25 +928,53 @@ function ClientesView({
         subtitle="Base de clientes ativos e contatos comerciais."
         action={{ label: "+ Novo cliente", onClick: onNew }}
         extra={
-          <input
-            className="crm-search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar..."
-          />
+          <>
+            <FilterTabs
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "todos", label: "Todos" },
+                { value: "ganho", label: "Ganhos" },
+                { value: "perdido", label: "Perdidos" },
+              ]}
+            />
+            <input
+              className="crm-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar..."
+            />
+          </>
         }
       />
       <Table
-        head={["Nome", "Empresa", "E-mail", "Telefone", "Cidade/UF", "Criado em", ""]}
-        rows={filtered.map((c) => [
-          c.name,
-          c.company || "—",
-          c.email || "—",
-          c.phone || "—",
-          [c.city, c.uf].filter(Boolean).join("/") || "—",
-          formatDate(c.createdAt),
-          <RowActions key={`a-${c.id}`} onEdit={() => onEdit(c)} onDelete={() => onDelete(c.id)} />,
-        ])}
+        head={head}
+        rows={filtered.map((c) => {
+          const row: React.ReactNode[] = [
+            c.name,
+            c.company || "—",
+            c.email || "—",
+            c.phone || "—",
+            [c.city, c.uf].filter(Boolean).join("/") || "—",
+            <ClienteStatusTag key={`s-${c.id}`} status={c.status} />,
+          ];
+          if (showInteraction) {
+            row.push(
+              c.status === "perdido" ? (
+                formatDateTime(c.updatedAt)
+              ) : (
+                <span className="crm-dim" key={`i-${c.id}`}>
+                  —
+                </span>
+              ),
+            );
+          }
+          row.push(
+            formatDate(c.createdAt),
+            <RowActions key={`a-${c.id}`} onEdit={() => onEdit(c)} onDelete={() => onDelete(c.id)} />,
+          );
+          return row;
+        })}
         empty="Nenhum cliente cadastrado."
       />
     </>
@@ -839,49 +983,222 @@ function ClientesView({
 
 // ===================== Propostas =====================
 
+// Colunas da tabela de propostas — cada uma sabe ordenar e renderizar a si mesma.
+type PropostaColKey = "number" | "clientName" | "company" | "createdAt" | "value" | "status";
+
+const PROPOSTA_COLUMNS: {
+  key: PropostaColKey;
+  label: string;
+  sortValue: (p: Proposta) => string | number;
+  defaultDir: "asc" | "desc";
+  render: (p: Proposta) => React.ReactNode;
+}[] = [
+  {
+    key: "number",
+    label: "Número",
+    sortValue: (p) => p.number.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => <strong>{p.number}</strong>,
+  },
+  {
+    key: "clientName",
+    label: "Cliente",
+    sortValue: (p) => p.clientName.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => p.clientName,
+  },
+  {
+    key: "company",
+    label: "Empresa",
+    sortValue: (p) => p.company.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => p.company || "—",
+  },
+  {
+    key: "createdAt",
+    label: "Data",
+    sortValue: (p) => p.createdAt,
+    defaultDir: "desc",
+    render: (p) => formatDate(p.createdAt),
+  },
+  {
+    key: "value",
+    label: "Valor",
+    sortValue: (p) => p.value,
+    defaultDir: "desc",
+    render: (p) => formatBRL(p.value),
+  },
+  {
+    key: "status",
+    label: "Status",
+    sortValue: (p) => p.status.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => <PropostaStatusTag status={p.status} archived={p.archived} />,
+  },
+];
+
 function PropostasView({
   propostas,
   onNew,
   onEdit,
   onDelete,
   onPdf,
+  onArchive,
 }: {
   propostas: Proposta[];
   onNew: () => void;
   onEdit: (p: Proposta) => void;
   onDelete: (id: string) => void;
   onPdf: (id: string) => void;
+  onArchive: (id: string, archived: boolean) => void;
 }) {
+  const [filter, setFilter] = useState<"ativas" | "arquivadas" | "todas">("ativas");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ key: PropostaColKey; dir: "asc" | "desc" } | null>(null);
+  // Ordem das colunas (arrastável). Começa na ordem natural do catálogo.
+  const [colOrder, setColOrder] = useState<PropostaColKey[]>(PROPOSTA_COLUMNS.map((c) => c.key));
+  const [dragKey, setDragKey] = useState<PropostaColKey | null>(null);
+
+  const q = query.trim().toLowerCase();
+  const filtered = propostas.filter((p) => {
+    const matchFilter =
+      filter === "ativas" ? !p.archived : filter === "arquivadas" ? p.archived : true;
+    if (!matchFilter) return false;
+    if (!q) return true;
+    return [p.clientName, p.company].join(" ").toLowerCase().includes(q);
+  });
+
+  // Aplica a ordenação ativa (se houver).
+  const sortCol = sort && PROPOSTA_COLUMNS.find((c) => c.key === sort.key);
+  const rows = sortCol
+    ? [...filtered].sort((a, b) => {
+        const av = sortCol.sortValue(a);
+        const bv = sortCol.sortValue(b);
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return sort!.dir === "asc" ? cmp : -cmp;
+      })
+    : filtered;
+
+  // Colunas na ordem escolhida pelo usuário.
+  const columns = colOrder.map((k) => PROPOSTA_COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+
+  const toggleSort = (key: PropostaColKey) => {
+    const col = PROPOSTA_COLUMNS.find((c) => c.key === key)!;
+    setSort((cur) =>
+      cur?.key !== key
+        ? { key, dir: col.defaultDir }
+        : { key, dir: cur.dir === "asc" ? "desc" : "asc" },
+    );
+  };
+
+  const onColDrop = (targetKey: PropostaColKey) => {
+    if (!dragKey || dragKey === targetKey) return;
+    setColOrder((cur) => {
+      const next = cur.filter((k) => k !== dragKey);
+      next.splice(next.indexOf(targetKey), 0, dragKey);
+      return next;
+    });
+    setDragKey(null);
+  };
+
+  const emptyMsg =
+    q.length > 0
+      ? "Nenhuma proposta encontrada para a busca."
+      : filter === "arquivadas"
+        ? "Nenhuma proposta arquivada."
+        : "Nenhuma proposta ainda. Clique em “+ Nova proposta”.";
+
   return (
     <>
       <PageHead
         title="Propostas"
         subtitle="Crie, edite e exporte propostas comerciais em PDF."
         action={{ label: "+ Nova proposta", onClick: onNew }}
+        extra={
+          <>
+            <FilterTabs
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "ativas", label: "Ativas" },
+                { value: "arquivadas", label: "Arquivadas" },
+                { value: "todas", label: "Todas" },
+              ]}
+            />
+            <input
+              className="crm-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar cliente ou empresa..."
+            />
+          </>
+        }
       />
-      <Table
-        head={["Número", "Cliente", "Empresa", "Data", "Valor", "Status", ""]}
-        rows={propostas.map((p) => [
-          <strong key={`n-${p.id}`}>{p.number}</strong>,
-          p.clientName,
-          p.company || "—",
-          formatDate(p.createdAt),
-          formatBRL(p.value),
-          <PropostaStatusTag key={`s-${p.id}`} status={p.status} />,
-          <div className="crm-row-actions" key={`a-${p.id}`}>
-            <button className="crm-link" onClick={() => onPdf(p.id)}>
-              PDF
-            </button>
-            <button className="crm-link" onClick={() => onEdit(p)}>
-              Editar
-            </button>
-            <button className="crm-link crm-link-danger" onClick={() => onDelete(p.id)}>
-              Excluir
-            </button>
-          </div>,
-        ])}
-        empty="Nenhuma proposta ainda. Clique em “+ Nova proposta”."
-      />
+      <div className="crm-panel crm-panel-flush">
+        <table className="crm-table">
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={"crm-th-interactive" + (dragKey === col.key ? " is-dragging" : "")}
+                  draggable
+                  onDragStart={() => setDragKey(col.key)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => onColDrop(col.key)}
+                  onDragEnd={() => setDragKey(null)}
+                  onClick={() => toggleSort(col.key)}
+                  title="Clique para ordenar · arraste para reordenar"
+                >
+                  <span className="crm-th-label">
+                    <span className="crm-th-grip" aria-hidden>
+                      ⠿
+                    </span>
+                    {col.label}
+                    <span className="crm-th-sort">
+                      {sort?.key === col.key ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </span>
+                  </span>
+                </th>
+              ))}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td className="crm-empty-cell" colSpan={columns.length + 1}>
+                  {emptyMsg}
+                </td>
+              </tr>
+            ) : (
+              rows.map((p) => (
+                <tr key={p.id}>
+                  {columns.map((col) => (
+                    <td key={col.key}>{col.render(p)}</td>
+                  ))}
+                  <td>
+                    <div className="crm-row-actions">
+                      <button className="crm-link" onClick={() => onPdf(p.id)}>
+                        PDF
+                      </button>
+                      <button className="crm-link" onClick={() => onEdit(p)}>
+                        Editar
+                      </button>
+                      <button className="crm-link" onClick={() => onArchive(p.id, !p.archived)}>
+                        {p.archived ? "Desarquivar" : "Arquivar"}
+                      </button>
+                      <button className="crm-link crm-link-danger" onClick={() => onDelete(p.id)}>
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }
@@ -1051,15 +1368,34 @@ function FormulariosView({
   onArchive: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const [filter, setFilter] = useState<"todos" | FormStatus>("todos");
+  const filtered = filter === "todos" ? forms : forms.filter((f) => f.status === filter);
+
   return (
     <>
       <PageHead
         title="Central de formulários"
         subtitle="Todos os briefings enviados pelo site da ProductLab."
         count={forms.length}
+        extra={
+          <FilterTabs
+            value={filter}
+            onChange={setFilter}
+            options={[
+              { value: "todos", label: "Todos" },
+              { value: "novo", label: "Novos" },
+              { value: "convertido", label: "Convertidos" },
+              { value: "arquivado", label: "Arquivados" },
+            ]}
+          />
+        }
       />
-      {forms.length === 0 ? (
-        <p className="crm-empty">Nenhum formulário recebido.</p>
+      {filtered.length === 0 ? (
+        <p className="crm-empty">
+          {filter === "arquivado"
+            ? "Nenhum formulário arquivado."
+            : "Nenhum formulário recebido."}
+        </p>
       ) : (
         <div className="crm-panel crm-panel-flush">
           <table className="crm-table">
@@ -1074,7 +1410,7 @@ function FormulariosView({
               </tr>
             </thead>
             <tbody>
-              {forms.map((f) => (
+              {filtered.map((f) => (
                 <tr key={f.id}>
                   <td>{formatDate(f.createdAt)}</td>
                   <td>
@@ -1329,8 +1665,9 @@ function ClienteModal({
           phone: cliente.phone,
           city: cliente.city,
           uf: cliente.uf,
+          status: cliente.status,
         }
-      : { name: "", company: "", email: "", phone: "", city: "", uf: "" },
+      : { name: "", company: "", email: "", phone: "", city: "", uf: "", status: "ganho" },
   );
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -1409,6 +1746,16 @@ function ClienteModal({
             />
           </label>
         </div>
+        <label className="crm-field">
+          <span className="crm-field-label">Situação</span>
+          <select
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value as ClienteStatus })}
+          >
+            <option value="ganho">Ganho</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </label>
 
         {err && <div className="crm-login-error">{err}</div>}
 
@@ -1505,25 +1852,52 @@ function PropostaModal({
   proposta,
   existing,
   leads,
+  clientes,
   onClose,
   onSave,
 }: {
   proposta: Proposta | null;
   existing: Proposta[];
   leads: Lead[];
+  clientes: Cliente[];
   onClose: () => void;
   onSave: (input: PropostaInput) => Promise<void>;
 }) {
   const c = proposta?.content;
   const [leadId, setLeadId] = useState<string | null>(proposta?.leadId ?? null);
+  const [clienteId, setClienteId] = useState<string>("");
   const [clientName, setClientName] = useState(proposta?.clientName ?? "");
   const [company, setCompany] = useState(proposta?.company ?? "");
+
+  // Ao escolher um cliente já cadastrado, preenche cliente/empresa a partir dele.
+  const onPickCliente = (id: string) => {
+    setClienteId(id);
+    if (!id) return;
+    const cliente = clientes.find((cl) => cl.id === id);
+    if (cliente) {
+      setClientName(cliente.name);
+      setCompany(cliente.company);
+    }
+  };
   const [title, setTitle] = useState(c?.title ?? "");
   // Valor base (plataforma/escopo principal) — itens adicionais somam em cima dele.
   const [baseValue, setBaseValue] = useState(
     c?.investment.options[0]?.items?.[0]?.price ?? proposta?.value ?? 0,
   );
   const [status, setStatus] = useState<PropostaStatus>(proposta?.status ?? "Rascunho");
+  // Duração do projeto (meses) + valor mensal aplicado nesse período.
+  const [durationMonths, setDurationMonths] = useState(c?.investment.durationMonths ?? 0);
+  const [monthlyRate, setMonthlyRate] = useState(c?.investment.monthlyRate ?? 300);
+  const [paymentCondition, setPaymentCondition] = useState<string>(
+    c?.investment.paymentCondition ?? DEFAULT_PAYMENT_CONDITION,
+  );
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(
+    c?.investment.paymentMethods ?? [...DEFAULT_PAYMENT_METHODS],
+  );
+  const togglePaymentMethod = (method: string) =>
+    setPaymentMethods((methods) =>
+      methods.includes(method) ? methods.filter((m) => m !== method) : [...methods, method],
+    );
 
   // Ao escolher um lead, vincula e preenche cliente/empresa a partir dele.
   const onPickLead = (id: string) => {
@@ -1547,7 +1921,8 @@ function PropostaModal({
   const [err, setErr] = useState("");
 
   const addonsTotal = Object.values(addonState).reduce((s, a) => s + (a.checked ? a.price : 0), 0);
-  const total = baseValue + addonsTotal;
+  const durationTotal = durationMonths * monthlyRate;
+  const total = baseValue + addonsTotal + durationTotal;
 
   const toggleAddon = (id: string) =>
     setAddonState((s) => ({ ...s, [id]: { ...s[id], checked: !s[id].checked } }));
@@ -1584,6 +1959,10 @@ function PropostaModal({
       title: title.trim(),
       baseValue,
       addons,
+      durationMonths,
+      monthlyRate,
+      paymentCondition,
+      paymentMethods,
       understanding,
       solution,
       scope: scopeText.split("\n"),
@@ -1626,6 +2005,19 @@ function PropostaModal({
               <option key={l.id} value={l.id}>
                 {l.name}
                 {l.company ? ` · ${l.company}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Cliente cadastrado (opcional)</span>
+          <select value={clienteId} onChange={(e) => onPickCliente(e.target.value)}>
+            <option value="">— Novo cliente (digitar abaixo) —</option>
+            {clientes.map((cl) => (
+              <option key={cl.id} value={cl.id}>
+                {cl.name}
+                {cl.company ? ` · ${cl.company}` : ""}
               </option>
             ))}
           </select>
@@ -1681,6 +2073,54 @@ function PropostaModal({
             </select>
           </label>
         </div>
+
+        <div className="crm-field-row">
+          <label className="crm-field">
+            <span className="crm-field-label">Duração do projeto (meses)</span>
+            <input
+              type="number"
+              min={0}
+              value={durationMonths}
+              onChange={(e) => setDurationMonths(Number(e.target.value) || 0)}
+            />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">Valor mensal (R$)</span>
+            <input
+              type="number"
+              min={0}
+              value={monthlyRate}
+              onChange={(e) => setMonthlyRate(Number(e.target.value) || 0)}
+            />
+          </label>
+        </div>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Condições de pagamento</span>
+          <select value={paymentCondition} onChange={(e) => setPaymentCondition(e.target.value)}>
+            {PAYMENT_CONDITIONS.map((cond) => (
+              <option key={cond} value={cond}>
+                {cond}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Formas de pagamento</span>
+          <div className="crm-payment-methods">
+            {PAYMENT_METHODS.map((method) => (
+              <label className="crm-addon-check" key={method}>
+                <input
+                  type="checkbox"
+                  checked={paymentMethods.includes(method)}
+                  onChange={() => togglePaymentMethod(method)}
+                />
+                <span>{method}</span>
+              </label>
+            ))}
+          </div>
+        </label>
 
         <div className="crm-field">
           <span className="crm-field-label">Itens adicionais (precificação dinâmica)</span>
@@ -1836,6 +2276,92 @@ function StageTag({ stage }: { stage: Stage }) {
   return <span className="crm-stage-tag">{stage}</span>;
 }
 
+// Indica, na tabela de Leads, se o lead já tem proposta vinculada.
+function PropostaLinkTag({ count }: { count: number }) {
+  if (count === 0) return <span className="crm-status crm-status-arquivado">Sem proposta</span>;
+  return (
+    <span className="crm-status crm-status-convertido">
+      ✓ {count} vinculada{count > 1 ? "s" : ""}
+    </span>
+  );
+}
+
+// Tag de origem do cliente: ganho (verde) / perdido (vermelho).
+function ClienteStatusTag({ status }: { status: ClienteStatus }) {
+  return (
+    <span className={`crm-status crm-status-${status}`}>
+      {status === "ganho" ? "Ganho" : "Perdido"}
+    </span>
+  );
+}
+
+// Abas de filtro reutilizáveis (Formulários, Propostas, Clientes).
+function FilterTabs<T extends string>({
+  value,
+  options,
+  onChange,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="crm-filters">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className={"crm-filter" + (value === o.value ? " is-active" : "")}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Modal de confirmação genérico para ações sensíveis/irreversíveis.
+function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  danger,
+  busy,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="crm-modal-overlay" onClick={onCancel}>
+      <div className="crm-modal crm-modal-sm" onClick={(e) => e.stopPropagation()}>
+        <h3 className="crm-modal-title">{title}</h3>
+        <p className="crm-modal-sub">{message}</p>
+        <div className="crm-modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={busy}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            className={"btn " + (danger ? "btn-danger" : "btn-primary")}
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function FormStatusTag({ status }: { status: FormStatus }) {
   const label = status === "novo" ? "Novo" : status === "convertido" ? "Convertido" : "Arquivado";
   return <span className={`crm-status crm-status-${status}`}>{label}</span>;
@@ -1849,8 +2375,19 @@ const PSTATUS_CLASS: Record<PropostaStatus, string> = {
   Recusada: "crm-status-arquivado",
 };
 
-function PropostaStatusTag({ status }: { status: PropostaStatus }) {
-  return <span className={`crm-status ${PSTATUS_CLASS[status]}`}>{status}</span>;
+function PropostaStatusTag({
+  status,
+  archived,
+}: {
+  status: PropostaStatus;
+  archived?: boolean;
+}) {
+  return (
+    <span className="crm-status-group">
+      <span className={`crm-status ${PSTATUS_CLASS[status]}`}>{status}</span>
+      {archived && <span className="crm-status crm-status-arquivado">Arquivada</span>}
+    </span>
+  );
 }
 
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {

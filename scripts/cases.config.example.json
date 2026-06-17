@@ -1,0 +1,26 @@
+{
+  "$schema": "Preencha um objeto por site/sistema. Copie este arquivo para 'cases.config.json' (esse fica fora do git) e coloque as credenciais reais lá.",
+  "cases": [
+    {
+      "id": "mundo-pet",
+      "name": "Mundo Pet",
+      "url": "https://seu-site-publico.com",
+      "scrollDurationMs": 8000
+    },
+    {
+      "id": "technik-portal",
+      "name": "Portal Technik",
+      "url": "https://app.exemplo.com/dashboard",
+      "scrollDurationMs": 9000,
+      "login": {
+        "url": "https://app.exemplo.com/login",
+        "steps": [
+          { "fill": "input[name='email']", "value": "demo@exemplo.com" },
+          { "fill": "input[name='password']", "value": "SENHA_DEMO" },
+          { "click": "button[type='submit']" },
+          { "waitForLoadState": "networkidle" }
+        ]
+      }
+    }
+  ]
+}

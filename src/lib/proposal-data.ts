@@ -8,6 +8,7 @@
 // =====================================================
 
 import { formatBRL } from "./crm-data";
+import { DEFAULT_PAYMENT_METHODS, DEFAULT_PAYMENT_CONDITION } from "./pricing-config";
 
 export interface InvestmentItem {
   id?: string; // id do catálogo (src/lib/pricing-config.ts) — presente só em itens adicionais (addons)
@@ -72,6 +73,10 @@ export interface Proposal {
   investment: {
     options: InvestmentOption[];
     paymentTerms: string;
+    paymentCondition?: string; // condição/parcelamento escolhido (preserva seleção ao editar)
+    paymentMethods?: string[]; // formas de pagamento marcadas (preserva seleção ao editar)
+    durationMonths?: number; // duração do projeto em meses (preserva seleção ao editar)
+    monthlyRate?: number; // valor mensal aplicado durante a duração (R$)
     note?: string;
   };
 
@@ -110,9 +115,9 @@ export function getAddonScopeBullets(p: Proposal): string[] {
 export const PRODUCTLAB_VENDOR: Proposal["vendor"] = {
   name: "ProductLab",
   tagline: "Software sob medida pra empresas que cresceram além das planilhas.",
-  email: "contato@productlab.com.br",
+  email: "productlab.software@gmail.com",
   phone: "(11) 99999-9999",
-  site: "productlab.com.br",
+  site: "productlabsoftware.com.br",
 };
 
 export const DEFAULT_WHY = [
@@ -129,6 +134,10 @@ export interface BuildProposalArgs {
   title: string;
   baseValue: number; // valor base (plataforma/escopo principal)
   addons?: PricingSelection[]; // itens adicionais marcados (Integração, banco de dados, infra...)
+  durationMonths?: number; // duração do projeto em meses
+  monthlyRate?: number; // valor mensal aplicado durante a duração (R$)
+  paymentCondition?: string; // condição/parcelamento escolhido
+  paymentMethods?: string[]; // formas de pagamento marcadas
   understanding?: string; // problema do cliente
   solution?: string; // o que será entregue
   scope?: string[]; // bullets do escopo (manual)
@@ -139,10 +148,23 @@ export interface BuildProposalArgs {
 
 const DAY = 24 * 60 * 60 * 1000;
 
+// Monta a frase de condições de pagamento a partir da condição/parcelamento
+// escolhido e das formas de pagamento marcadas no formulário.
+function buildPaymentTerms(condition: string, methods: string[]): string {
+  const split = condition.trim() || DEFAULT_PAYMENT_CONDITION;
+  if (methods.length === 0) return `${split}.`;
+  if (methods.length === 1) return `${split}. ${methods[0]}.`;
+  return `${split}. ${methods.slice(0, -1).join(", ")} ou ${methods[methods.length - 1]}.`;
+}
+
 export function buildProposal(a: BuildProposalArgs): Proposal {
   const date = a.date ?? new Date().toISOString();
   const validUntil = a.validUntil ?? new Date(Date.now() + 14 * DAY).toISOString();
   const addons = a.addons ?? [];
+  const durationMonths = a.durationMonths ?? 0;
+  const monthlyRate = a.monthlyRate ?? 300;
+  const paymentCondition = a.paymentCondition ?? DEFAULT_PAYMENT_CONDITION;
+  const paymentMethods = a.paymentMethods ?? [...DEFAULT_PAYMENT_METHODS];
   const items: InvestmentItem[] = [
     { label: "Plataforma (escopo base)", price: a.baseValue },
     ...addons.map((ad) => ({
@@ -152,6 +174,13 @@ export function buildProposal(a: BuildProposalArgs): Proposal {
       observation: ad.observation,
     })),
   ];
+  if (durationMonths > 0) {
+    items.push({
+      label: "Suporte e manutenção mensal",
+      price: durationMonths * monthlyRate,
+      observation: `${durationMonths} ${durationMonths === 1 ? "mês" : "meses"} × ${formatBRL(monthlyRate)}/mês`,
+    });
+  }
   const total = items.reduce((sum, it) => sum + it.price, 0);
   return {
     number: a.number,
@@ -166,7 +195,11 @@ export function buildProposal(a: BuildProposalArgs): Proposal {
     phases: [],
     investment: {
       options: [{ name: "Investimento", description: "", price: total, recommended: true, items }],
-      paymentTerms: "50% na aprovação e 50% na entrega. Pix, boleto ou cartão.",
+      paymentTerms: buildPaymentTerms(paymentCondition, paymentMethods),
+      paymentCondition,
+      paymentMethods,
+      durationMonths,
+      monthlyRate,
     },
     why: DEFAULT_WHY,
     nextStep:
@@ -189,13 +222,7 @@ export const sampleProposal: Proposal = {
     company: "Distribuidora XYZ",
     location: "São Paulo / SP",
   },
-  vendor: {
-    name: "ProductLab",
-    tagline: "Software sob medida pra empresas que cresceram além das planilhas.",
-    email: "contato@gsolutions.com.br",
-    phone: "(11) 99999-9999",
-    site: "gsolutions.com.br",
-  },
+  vendor: PRODUCTLAB_VENDOR,
   title: "Portal de Representantes com Comissão em Tempo Real",
 
   understanding: {

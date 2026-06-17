@@ -10,6 +10,7 @@
   --p-purple: #7c3aed;
   --p-pink: #db2777;
   --p-grad: linear-gradient(135deg, #7c3aed, #db2777);
+  --p-grad-cover: linear-gradient(135deg, #4c1d95, #831843);
   --p-ink: #1a1523;
   --p-dim: #6b6478;
   --p-line: #e6e1ec;
@@ -105,17 +106,23 @@
   padding: 0;
 }
 .cover-band {
-  background: var(--p-grad);
+  background: var(--p-grad-cover);
   color: #fff;
   padding: 26mm 20mm;
   position: relative;
 }
 .cover-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-weight: 600;
   letter-spacing: 0.04em;
   font-size: 15px;
   opacity: 0.95;
+}
+.cover-logo {
+  flex-shrink: 0;
 }
 .cover-tag {
   margin-top: 6px;
@@ -355,6 +362,14 @@ ul.crosslist li::before {
   line-height: 1.55;
 }
 .pay-terms strong {
+  color: var(--p-ink);
+}
+.pay-duration {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.pay-duration strong {
   color: var(--p-ink);
 }
 .pay-note {

@@ -158,6 +158,14 @@ p {
 .btn-secondary:hover {
   background: var(--bg-3);
 }
+.btn-danger {
+  background: #f87171;
+  color: var(--bg);
+  box-shadow: 0 10px 32px rgba(248, 113, 113, 0.3);
+}
+.btn-danger:hover {
+  box-shadow: 0 14px 40px rgba(248, 113, 113, 0.45);
+}
 .btn-ghost {
   background: var(--ink);
   color: var(--bg);
@@ -730,6 +738,83 @@ section[id] {
 }
 .case-next:hover {
   transform: translateY(-50%) scale(1.06);
+}
+
+/* layout depoimento + prévia */
+.case-layout {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(28px, 4vw, 56px);
+  align-items: center;
+}
+.case-content .case-author {
+  margin-bottom: 0;
+}
+.case-media {
+  position: relative;
+  z-index: 2;
+}
+.case-browser {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+  box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.7);
+}
+.case-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+}
+.case-browser-bar span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+}
+.case-browser-bar span:nth-child(1) {
+  background: #ff5f57;
+}
+.case-browser-bar span:nth-child(2) {
+  background: #febc2e;
+}
+.case-browser-bar span:nth-child(3) {
+  background: #28c840;
+}
+.case-video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top center;
+  background: var(--bg-2);
+}
+.case-mobile {
+  position: absolute;
+  right: -14px;
+  bottom: -22px;
+  width: 23%;
+  min-width: 92px;
+  border-radius: 16px;
+  border: 3px solid var(--bg);
+  box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.8);
+  background: var(--bg-2);
+}
+@media (max-width: 860px) {
+  .case-layout {
+    grid-template-columns: 1fr;
+  }
+  .case-media {
+    margin-top: 12px;
+  }
+  .case-mobile {
+    right: 4px;
+    bottom: -16px;
+    width: 26%;
+  }
 }
 
 .metrics {
@@ -1520,6 +1605,22 @@ section[id] {
   gap: 14px;
   overflow-x: auto;
   padding-bottom: 8px;
+  /* Barra de rolagem escura e discreta (Firefox + Chrome/Safari/Edge). */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+.crm-kanban::-webkit-scrollbar {
+  height: 8px;
+}
+.crm-kanban::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crm-kanban::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+.crm-kanban::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .crm-kanban-col {
   background: var(--bg-2);
@@ -1667,6 +1768,45 @@ section[id] {
 }
 .crm-table tr:last-child td {
   border-bottom: none;
+}
+
+/* ---------- Cabeçalho interativo (ordenar + reordenar colunas) ---------- */
+.crm-th-interactive {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.crm-th-interactive:hover {
+  color: var(--ink);
+  background: var(--bg-3);
+}
+.crm-th-interactive.is-dragging {
+  opacity: 0.4;
+}
+.crm-th-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.crm-th-grip {
+  color: var(--border);
+  cursor: grab;
+  font-size: 12px;
+  line-height: 1;
+}
+.crm-th-interactive:hover .crm-th-grip {
+  color: var(--dim);
+}
+.crm-th-sort {
+  color: var(--purple);
+  font-size: 9px;
+  width: 9px;
+}
+.crm-empty-cell {
+  text-align: center;
+  color: var(--dim);
+  padding: 28px 18px;
 }
 .crm-stage-tag {
   font-size: 12px;
@@ -1825,6 +1965,36 @@ section[id] {
 .crm-search::placeholder { color: var(--dim); }
 .crm-search:focus { outline: none; border-color: var(--purple); }
 
+/* ---------- Abas de filtro (Formulários / Propostas / Clientes) ---------- */
+.crm-filters {
+  flex: none;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.crm-filter {
+  border: none;
+  background: none;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+.crm-filter:hover { color: var(--ink); }
+.crm-filter.is-active {
+  color: var(--bg);
+  background: var(--grad);
+}
+
 /* ---------- Ações em linha (tabelas / formulários) ---------- */
 .crm-row-actions { display: flex; gap: 14px; justify-content: flex-end; }
 .crm-link {
@@ -1887,6 +2057,23 @@ section[id] {
   background: var(--bg-3);
   border-color: var(--border);
 }
+.crm-status-ganho {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.crm-status-perdido {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+/* Agrupa o status da proposta com a tag "Arquivada". */
+.crm-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
 /* ---------- Modal ---------- */
 .crm-modal-overlay {
@@ -1898,12 +2085,12 @@ section[id] {
   -webkit-backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 16px;
 }
 .crm-modal {
   width: 100%;
   max-width: 460px;
-  max-height: 90vh;
+  max-height: 92vh;
   overflow-y: auto;
   background: linear-gradient(180deg, var(--bg-2), var(--bg-3));
   border: 1px solid var(--border);
@@ -1913,9 +2100,17 @@ section[id] {
   flex-direction: column;
   gap: 14px;
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  /* Mantém o scroll funcional, mas sem a barra visível (Firefox + Chrome/Safari/Edge). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.crm-modal-wide { max-width: 600px; }
+.crm-modal::-webkit-scrollbar {
+  display: none;
+}
+.crm-modal-wide { max-width: min(94vw, 820px); }
+.crm-modal-sm { max-width: 400px; }
 .crm-modal-title { font-size: 22px; }
+.crm-dim { color: var(--dim); }
 .crm-modal-head { display: flex; align-items: center; gap: 12px; }
 .crm-modal-sub { color: var(--dim); font-size: 13px; margin-top: -6px; }
 .crm-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -2062,6 +2257,7 @@ section[id] {
 .crm-addon-check input {
   width: 16px;
   height: 16px;
+  border-radius: 5px;
   accent-color: var(--purple);
   cursor: pointer;
 }
@@ -2098,6 +2294,16 @@ section[id] {
 .crm-total-bar strong {
   font-size: 18px;
   color: var(--purple);
+}
+
+.crm-payment-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--bg);
 }
 
 @media (max-width: 520px) {

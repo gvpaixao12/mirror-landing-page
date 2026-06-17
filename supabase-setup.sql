@@ -37,8 +37,18 @@ create table if not exists public.clientes (
   phone text default '',
   city text default '',
   uf text default '',
-  created_at timestamptz not null default now()
+  status text not null default 'ganho' check (status in ('ganho','perdido')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+-- Bancos criados antes das colunas status/updated_at (origem ganho/perdido
+-- e marca da última edição/interação com o cliente).
+alter table public.clientes
+  add column if not exists status text not null default 'ganho'
+    check (status in ('ganho','perdido'));
+alter table public.clientes
+  add column if not exists updated_at timestamptz not null default now();
 
 -- ---------- PROPOSTAS ----------
 create table if not exists public.propostas (
@@ -51,12 +61,17 @@ create table if not exists public.propostas (
     check (status in ('Rascunho','Enviada','Aceita','Recusada')),
   content jsonb not null default '{}'::jsonb,
   lead_id uuid references public.leads(id) on delete set null,
+  archived boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 -- Bancos criados antes da coluna lead_id (vínculo proposta ↔ lead do funil)
 alter table public.propostas
   add column if not exists lead_id uuid references public.leads(id) on delete set null;
+
+-- Bancos criados antes da coluna archived (arquivamento de propostas)
+alter table public.propostas
+  add column if not exists archived boolean not null default false;
 
 -- ---------- PROFILES (perfil + flag de admin) ----------
 -- Espelha auth.users e guarda quem é administrador. O is_admin NÃO vem

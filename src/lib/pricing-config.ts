@@ -107,3 +107,35 @@ export const PRICING_CATALOG: PricingItem[] = [
     defaultPrice: 800,
   },
 ];
+
+// Formas de pagamento selecionáveis na proposta — marcadas via checkbox no
+// formulário e exibidas nas condições de pagamento do PDF.
+export const PAYMENT_METHODS = [
+  "Pix",
+  "Boleto",
+  "Cartão de crédito (até 12x)",
+  "Cartão de débito",
+  "Transferência bancária (TED)",
+] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
+  "Pix",
+  "Boleto",
+  "Cartão de crédito (até 12x)",
+];
+
+// Condições de pagamento (parcelamento/etapas) selecionáveis na proposta —
+// é a parte "como/quando paga" das condições do PDF. O vendedor escolhe uma.
+export const PAYMENT_CONDITIONS = [
+  "50% na aprovação e 50% na entrega",
+  "40% na aprovação, 30% na entrega da Fase 2 e 30% na publicação",
+  "30% na aprovação e 70% na entrega",
+  "100% na aprovação",
+  "Mensalidade fixa durante a duração do projeto",
+] as const;
+
+export type PaymentCondition = (typeof PAYMENT_CONDITIONS)[number];
+
+export const DEFAULT_PAYMENT_CONDITION: PaymentCondition = "50% na aprovação e 50% na entrega";
