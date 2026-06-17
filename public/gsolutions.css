@@ -1970,9 +1970,84 @@ p {
 .crm-detail-label { font-size: 13px; color: var(--dim); font-weight: 600; }
 .crm-detail-value { font-size: 14px; color: var(--ink); white-space: pre-wrap; }
 
+/* ---------- Itens adicionais (precificação dinâmica da proposta) ---------- */
+.crm-addons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--bg);
+}
+.crm-addon-cat-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 8px;
+}
+.crm-addon-row {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.crm-addon-cat .crm-addon-row:last-child {
+  border-bottom: none;
+}
+.crm-addon-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.crm-addon-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
+.crm-addon-fields {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  margin: 8px 0 2px 26px;
+}
+.crm-addon-fields input {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.crm-addon-fields input:focus {
+  outline: none;
+  border-color: var(--purple);
+}
+.crm-total-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, var(--bg-2), var(--bg-3));
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.crm-total-bar strong {
+  font-size: 18px;
+  color: var(--purple);
+}
+
 @media (max-width: 520px) {
   .crm-field-row { grid-template-columns: 1fr; }
   .crm-detail-row { grid-template-columns: 1fr; gap: 2px; }
+  .crm-addon-fields { grid-template-columns: 1fr; margin-left: 0; }
 }
 
 /* ---------- Widget de chat (gerar proposta) ---------- */

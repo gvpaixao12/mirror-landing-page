@@ -39,7 +39,8 @@ import {
   setPropostaLead,
   nextPropostaNumber,
 } from "../lib/crm-data";
-import { buildProposal } from "../lib/proposal-data";
+import { buildProposal, type PricingSelection } from "../lib/proposal-data";
+import { PRICING_CATALOG, PRICING_CATEGORIES } from "../lib/pricing-config";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -1351,6 +1352,24 @@ function FormView({
   );
 }
 
+// Estado local dos itens adicionais (addons) marcáveis no formulário de proposta.
+type AddonState = Record<string, { checked: boolean; price: number; observation: string }>;
+
+function initialAddonState(content: Proposta["content"] | undefined): AddonState {
+  const existingItems = content?.investment.options[0]?.items?.filter((it) => it.id) ?? [];
+  const byId = new Map(existingItems.map((it) => [it.id as string, it]));
+  const state: AddonState = {};
+  for (const item of PRICING_CATALOG) {
+    const existing = byId.get(item.id);
+    state[item.id] = {
+      checked: !!existing,
+      price: existing?.price ?? item.defaultPrice,
+      observation: existing?.observation ?? "",
+    };
+  }
+  return state;
+}
+
 function PropostaModal({
   proposta,
   existing,
@@ -1369,7 +1388,10 @@ function PropostaModal({
   const [clientName, setClientName] = useState(proposta?.clientName ?? "");
   const [company, setCompany] = useState(proposta?.company ?? "");
   const [title, setTitle] = useState(c?.title ?? "");
-  const [value, setValue] = useState(proposta?.value ?? 0);
+  // Valor base (plataforma/escopo principal) — itens adicionais somam em cima dele.
+  const [baseValue, setBaseValue] = useState(
+    c?.investment.options[0]?.items?.[0]?.price ?? proposta?.value ?? 0,
+  );
   const [status, setStatus] = useState<PropostaStatus>(proposta?.status ?? "Rascunho");
 
   // Ao escolher um lead, vincula e preenche cliente/empresa a partir dele.
@@ -1389,8 +1411,19 @@ function PropostaModal({
   const [solution, setSolution] = useState(c?.solution.intro ?? "");
   const [scopeText, setScopeText] = useState((c?.scope.included ?? []).join("\n"));
   const [nextStep, setNextStep] = useState(c?.nextStep ?? "");
+  const [addonState, setAddonState] = useState<AddonState>(() => initialAddonState(c));
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+
+  const addonsTotal = Object.values(addonState).reduce((s, a) => s + (a.checked ? a.price : 0), 0);
+  const total = baseValue + addonsTotal;
+
+  const toggleAddon = (id: string) =>
+    setAddonState((s) => ({ ...s, [id]: { ...s[id], checked: !s[id].checked } }));
+  const setAddonPrice = (id: string, price: number) =>
+    setAddonState((s) => ({ ...s, [id]: { ...s[id], price } }));
+  const setAddonObservation = (id: string, observation: string) =>
+    setAddonState((s) => ({ ...s, [id]: { ...s[id], observation } }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1405,12 +1438,21 @@ function PropostaModal({
     setSaving(true);
     setErr("");
     const number = proposta ? proposta.number : nextPropostaNumber(existing);
+    const addons: PricingSelection[] = PRICING_CATALOG.filter(
+      (item) => addonState[item.id].checked,
+    ).map((item) => ({
+      id: item.id,
+      label: item.label,
+      price: addonState[item.id].price,
+      observation: addonState[item.id].observation.trim() || undefined,
+    }));
     const content = buildProposal({
       number,
       clientName: clientName.trim(),
       company: company.trim(),
       title: title.trim(),
-      value,
+      baseValue,
+      addons,
       understanding,
       solution,
       scope: scopeText.split("\n"),
@@ -1423,7 +1465,7 @@ function PropostaModal({
         number,
         clientName: clientName.trim(),
         company: company.trim(),
-        value,
+        value: total,
         status,
         content,
         leadId,
@@ -1489,12 +1531,12 @@ function PropostaModal({
 
         <div className="crm-field-row">
           <label className="crm-field">
-            <span className="crm-field-label">Valor (R$)</span>
+            <span className="crm-field-label">Valor base (R$)</span>
             <input
               type="number"
               min={0}
-              value={value}
-              onChange={(e) => setValue(Number(e.target.value) || 0)}
+              value={baseValue}
+              onChange={(e) => setBaseValue(Number(e.target.value) || 0)}
             />
           </label>
           <label className="crm-field">
@@ -1507,6 +1549,54 @@ function PropostaModal({
               ))}
             </select>
           </label>
+        </div>
+
+        <div className="crm-field">
+          <span className="crm-field-label">Itens adicionais (precificação dinâmica)</span>
+          <div className="crm-addons">
+            {PRICING_CATEGORIES.map((cat) => (
+              <div className="crm-addon-cat" key={cat}>
+                <div className="crm-addon-cat-title">{cat}</div>
+                {PRICING_CATALOG.filter((item) => item.category === cat).map((item) => {
+                  const st = addonState[item.id];
+                  return (
+                    <div className="crm-addon-row" key={item.id}>
+                      <label className="crm-addon-check">
+                        <input
+                          type="checkbox"
+                          checked={st.checked}
+                          onChange={() => toggleAddon(item.id)}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                      {st.checked && (
+                        <div className="crm-addon-fields">
+                          <input
+                            type="number"
+                            min={0}
+                            value={st.price}
+                            onChange={(e) => setAddonPrice(item.id, Number(e.target.value) || 0)}
+                            aria-label={`Preço — ${item.label}`}
+                          />
+                          <input
+                            type="text"
+                            value={st.observation}
+                            onChange={(e) => setAddonObservation(item.id, e.target.value)}
+                            placeholder="Observação (opcional)"
+                            aria-label={`Observação — ${item.label}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="crm-total-bar">
+            <span>Valor total estimado</span>
+            <strong>{formatBRL(total)}</strong>
+          </div>
         </div>
 
         <label className="crm-field">
