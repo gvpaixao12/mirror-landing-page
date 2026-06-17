@@ -377,6 +377,7 @@ function AdminPage() {
           proposta={propostaModal.proposta}
           existing={propostas}
           leads={leads}
+          clientes={clientes}
           onClose={() => setPropostaModal({ open: false, proposta: null })}
           onSave={saveProposta}
         />
@@ -1374,19 +1375,33 @@ function PropostaModal({
   proposta,
   existing,
   leads,
+  clientes,
   onClose,
   onSave,
 }: {
   proposta: Proposta | null;
   existing: Proposta[];
   leads: Lead[];
+  clientes: Cliente[];
   onClose: () => void;
   onSave: (input: PropostaInput) => Promise<void>;
 }) {
   const c = proposta?.content;
   const [leadId, setLeadId] = useState<string | null>(proposta?.leadId ?? null);
+  const [clienteId, setClienteId] = useState<string>("");
   const [clientName, setClientName] = useState(proposta?.clientName ?? "");
   const [company, setCompany] = useState(proposta?.company ?? "");
+
+  // Ao escolher um cliente já cadastrado, preenche cliente/empresa a partir dele.
+  const onPickCliente = (id: string) => {
+    setClienteId(id);
+    if (!id) return;
+    const cliente = clientes.find((cl) => cl.id === id);
+    if (cliente) {
+      setClientName(cliente.name);
+      setCompany(cliente.company);
+    }
+  };
   const [title, setTitle] = useState(c?.title ?? "");
   // Valor base (plataforma/escopo principal) — itens adicionais somam em cima dele.
   const [baseValue, setBaseValue] = useState(
@@ -1495,6 +1510,19 @@ function PropostaModal({
               <option key={l.id} value={l.id}>
                 {l.name}
                 {l.company ? ` · ${l.company}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Cliente cadastrado (opcional)</span>
+          <select value={clienteId} onChange={(e) => onPickCliente(e.target.value)}>
+            <option value="">— Novo cliente (digitar abaixo) —</option>
+            {clientes.map((cl) => (
+              <option key={cl.id} value={cl.id}>
+                {cl.name}
+                {cl.company ? ` · ${cl.company}` : ""}
               </option>
             ))}
           </select>

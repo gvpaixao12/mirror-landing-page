@@ -1842,12 +1842,12 @@ p {
   -webkit-backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: 16px;
 }
 .crm-modal {
   width: 100%;
   max-width: 460px;
-  max-height: 90vh;
+  max-height: 92vh;
   overflow-y: auto;
   background: linear-gradient(180deg, var(--bg-2), var(--bg-3));
   border: 1px solid var(--border);
@@ -1857,8 +1857,14 @@ p {
   flex-direction: column;
   gap: 14px;
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.6);
+  /* Mantém o scroll funcional, mas sem a barra visível (Firefox + Chrome/Safari/Edge). */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.crm-modal-wide { max-width: 600px; }
+.crm-modal::-webkit-scrollbar {
+  display: none;
+}
+.crm-modal-wide { max-width: min(94vw, 820px); }
 .crm-modal-title { font-size: 22px; }
 .crm-modal-head { display: flex; align-items: center; gap: 12px; }
 .crm-modal-sub { color: var(--dim); font-size: 13px; margin-top: -6px; }
@@ -2006,6 +2012,7 @@ p {
 .crm-addon-check input {
   width: 16px;
   height: 16px;
+  border-radius: 5px;
   accent-color: var(--purple);
   cursor: pointer;
 }
