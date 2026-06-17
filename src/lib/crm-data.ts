@@ -269,6 +269,7 @@ export interface Proposta {
   value: number; // R$ (valor de destaque que aparece na lista)
   status: PropostaStatus;
   content: Proposal; // conteúdo completo usado pra renderizar o PDF
+  leadId: string | null; // vínculo com o lead do funil (null = avulsa)
   createdAt: string; // ISO
 }
 
@@ -279,6 +280,7 @@ export interface PropostaInput {
   value: number;
   status: PropostaStatus;
   content: Proposal;
+  leadId?: string | null;
 }
 
 interface PropostaRow {
@@ -289,6 +291,7 @@ interface PropostaRow {
   value: number | string | null;
   status: PropostaStatus;
   content: Proposal;
+  lead_id: string | null;
   created_at: string;
 }
 
@@ -301,6 +304,7 @@ function rowToProposta(r: PropostaRow): Proposta {
     value: Number(r.value ?? 0),
     status: r.status,
     content: r.content,
+    leadId: r.lead_id ?? null,
     createdAt: r.created_at,
   };
 }
@@ -330,6 +334,7 @@ export async function createProposta(input: PropostaInput): Promise<Proposta> {
       value: input.value,
       status: input.status,
       content: input.content,
+      lead_id: input.leadId ?? null,
     })
     .select()
     .single();
@@ -346,6 +351,7 @@ export async function updateProposta(id: string, input: PropostaInput): Promise<
       value: input.value,
       status: input.status,
       content: input.content,
+      lead_id: input.leadId ?? null,
     })
     .eq("id", id);
   if (error) throw error;
@@ -353,6 +359,13 @@ export async function updateProposta(id: string, input: PropostaInput): Promise<
 
 export async function deleteProposta(id: string): Promise<void> {
   const { error } = await supabase.from("propostas").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// (Des)vincula uma proposta a um lead. leadId null = proposta avulsa.
+// Como cada proposta guarda um único lead_id, ela nunca fica em dois leads.
+export async function setPropostaLead(id: string, leadId: string | null): Promise<void> {
+  const { error } = await supabase.from("propostas").update({ lead_id: leadId }).eq("id", id);
   if (error) throw error;
 }
 
