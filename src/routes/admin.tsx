@@ -318,13 +318,16 @@ function AdminPage() {
           />
         )}
         {view === "propostas" && (
-          <PropostasView
-            propostas={propostas}
-            onNew={() => setPropostaModal({ open: true, proposta: null })}
-            onEdit={(p) => setPropostaModal({ open: true, proposta: p })}
-            onDelete={removeProposta}
-            onPdf={openPdf}
-          />
+          <>
+            <PropostasView
+              propostas={propostas}
+              onNew={() => setPropostaModal({ open: true, proposta: null })}
+              onEdit={(p) => setPropostaModal({ open: true, proposta: p })}
+              onDelete={removeProposta}
+              onPdf={openPdf}
+            />
+            <ProposalChatWidget />
+          </>
         )}
         {view === "formularios" && (
           <FormulariosView
@@ -646,6 +649,158 @@ function PropostasView({
         empty="Nenhuma proposta ainda. Clique em “+ Nova proposta”."
       />
     </>
+  );
+}
+
+// ===================== Widget de chat (gerar proposta) =====================
+
+type ChatMsg = { role: "user" | "bot"; text: string };
+type ChatLead = { name: string; company: string; phone: string };
+
+// Máscara de telefone BR: até 11 dígitos → (99) 99999-9999 (celular) ou (99) 9999-9999 (fixo).
+function formatPhoneBR(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 2) return d.replace(/^(\d{0,2})/, "($1");
+  if (d.length <= 6) return d.replace(/^(\d{2})(\d{0,4})/, "($1) $2");
+  if (d.length <= 10) return d.replace(/^(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
+  return d.replace(/^(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
+}
+
+function ProposalChatWidget() {
+  const [open, setOpen] = useState(false);
+  const [lead, setLead] = useState<ChatLead | null>(null);
+  // Dados de contato exigidos antes de liberar o chat.
+  const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [phone, setPhone] = useState("");
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [input, setInput] = useState("");
+
+  const intakeValid = name.trim() && company.trim() && phone.trim();
+
+  const startChat = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!intakeValid) return;
+    const firstName = name.trim().split(" ")[0];
+    setLead({ name: name.trim(), company: company.trim(), phone: phone.trim() });
+    setMessages([
+      {
+        role: "bot",
+        text: `Oi, ${firstName}! Me conta o que você precisa: qual problema quer resolver, pra quem é e o que espera do projeto. Vou usar isso pra montar a proposta.`,
+      },
+    ]);
+  };
+
+  const send = (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    setMessages((m) => [...m, { role: "user", text }]);
+    setInput("");
+    // TODO (fase 2 — IA): chamar a server function de geração com { lead, contexto: text }
+    // e devolver um Proposal preenchido pra abrir no PropostaModal/PDF.
+    setMessages((m) => [
+      ...m,
+      {
+        role: "bot",
+        text: "Anotado! A geração automática da proposta com IA entra na próxima etapa.",
+      },
+    ]);
+  };
+
+  const reset = () => {
+    setLead(null);
+    setName("");
+    setCompany("");
+    setPhone("");
+    setMessages([]);
+    setInput("");
+  };
+
+  if (!open) {
+    return (
+      <button
+        className="crm-chat-fab"
+        onClick={() => setOpen(true)}
+        title="Gerar proposta com IA"
+        aria-label="Abrir assistente de propostas"
+      >
+        💬
+      </button>
+    );
+  }
+
+  return (
+    <div className="crm-chat-panel">
+      <div className="crm-chat-head">
+        <div>
+          <strong>Product.Inho</strong>
+          <span className="crm-chat-sub">{lead ? lead.company : "Assistente de propostas"}</span>
+        </div>
+        <div className="crm-chat-head-actions">
+          {lead && (
+            <button className="crm-chat-icon" onClick={reset} title="Recomeçar">
+              ↺
+            </button>
+          )}
+          <button className="crm-chat-icon" onClick={() => setOpen(false)} title="Fechar">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {!lead ? (
+        <form className="crm-chat-intake" onSubmit={startChat}>
+          <p className="crm-chat-hint">Pra começar, preencha seus dados de contato.</p>
+          <label className="crm-field">
+            <span className="crm-field-label">Nome</span>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoFocus />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">Empresa</span>
+            <input
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+              placeholder="Nome da empresa"
+            />
+          </label>
+          <label className="crm-field">
+            <span className="crm-field-label">Telefone</span>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
+              placeholder="(00) 00000-0000"
+              type="tel"
+              inputMode="tel"
+              maxLength={15}
+            />
+          </label>
+          <button className="btn btn-primary" type="submit" disabled={!intakeValid}>
+            Começar
+          </button>
+        </form>
+      ) : (
+        <>
+          <div className="crm-chat-body">
+            {messages.map((m, i) => (
+              <div key={i} className={"crm-chat-msg crm-chat-msg-" + m.role}>
+                {m.text}
+              </div>
+            ))}
+          </div>
+          <form className="crm-chat-input" onSubmit={send}>
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Descreva o que você precisa..."
+            />
+            <button className="btn btn-primary" type="submit" disabled={!input.trim()}>
+              ↑
+            </button>
+          </form>
+        </>
+      )}
+    </div>
   );
 }
 
