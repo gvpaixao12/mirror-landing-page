@@ -427,6 +427,7 @@ type CaseItem = {
   role: string;
   hideMobile?: boolean;
   image?: boolean; // usa imagem estática (desktop.png) no frame, em vez de vídeo
+  clickToPlay?: boolean; // mostra desktop.png como capa e toca video.mp4 (com áudio) ao dar play
 };
 
 const CASES: CaseItem[] = [
@@ -436,7 +437,7 @@ const CASES: CaseItem[] = [
       '"Agora tenho o controle da agenda de todos os barbeiros ao mesmo, além do controle financeiro da loja. Tudo junto!"',
     name: "Gabriel V.",
     role: "Barbearia Santa Mônica",
-    image: true,
+    clickToPlay: true,
   },
   {
     id: "mundo-pet",
@@ -464,8 +465,25 @@ const CASES: CaseItem[] = [
 
 function CaseCarousel() {
   const [i, setI] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const c = CASES[i];
   const next = () => setI((v) => (v + 1) % CASES.length);
+
+  // Esc fecha o lightbox; trava o scroll do body enquanto aberto.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
+
   return (
     <div className="case-card">
       <div className="case-glow case-glow-1" aria-hidden="true"></div>
@@ -503,6 +521,26 @@ function CaseCarousel() {
                   alt={`Prévia desktop — ${c.role}`}
                   loading="lazy"
                 />
+              ) : c.clickToPlay ? (
+                <>
+                  <video
+                    key={c.id}
+                    className="case-video"
+                    src={`/cases/${c.id}/video.mp4`}
+                    poster={`/cases/${c.id}/desktop.png`}
+                    controls
+                    playsInline
+                    preload="none"
+                  />
+                  <button
+                    type="button"
+                    className="case-expand"
+                    aria-label="Ver em tela cheia"
+                    onClick={() => setLightbox(true)}
+                  >
+                    ⤢
+                  </button>
+                </>
               ) : (
                 <video
                   key={c.id}
@@ -528,6 +566,33 @@ function CaseCarousel() {
           </div>
         )}
       </div>
+      {lightbox && (
+        <div
+          className="case-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Vídeo — ${c.role}`}
+          onClick={() => setLightbox(false)}
+        >
+          <button
+            type="button"
+            className="case-lightbox-close"
+            aria-label="Fechar"
+            onClick={() => setLightbox(false)}
+          >
+            ✕
+          </button>
+          <video
+            className="case-lightbox-video"
+            src={`/cases/${c.id}/video.mp4`}
+            poster={`/cases/${c.id}/desktop.png`}
+            controls
+            autoPlay
+            playsInline
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
