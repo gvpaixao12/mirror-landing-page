@@ -6,6 +6,7 @@ import {
   formatBRL,
   formatLongDate,
   getAddonScopeBullets,
+  PRODUCTLAB_VENDOR,
   type Proposal,
 } from "../lib/proposal-data";
 
@@ -74,6 +75,17 @@ function PropostaPage() {
 }
 
 function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
+  // Contato sempre com os dados atuais da ProductLab — propostas antigas
+  // guardaram o e-mail/site antigos no JSON, então sobrescrevemos na hora de
+  // exibir (nome/tagline seguem o que está salvo).
+  const contact = {
+    ...p.vendor,
+    email: PRODUCTLAB_VENDOR.email,
+    site: PRODUCTLAB_VENDOR.site,
+    phone: PRODUCTLAB_VENDOR.phone,
+  };
+  const durationMonths = p.investment.durationMonths ?? 0;
+
   // Monta só as seções que têm conteúdo, numerando em sequência.
   const blocks: { title: string; body: ReactNode }[] = [];
 
@@ -199,6 +211,12 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
           </div>
           <div className="pay-terms">
             <strong>Condições:</strong> {p.investment.paymentTerms}
+            {durationMonths > 0 && (
+              <div className="pay-duration">
+                <strong>Prazo de execução:</strong> {durationMonths}{" "}
+                {durationMonths === 1 ? "mês" : "meses"}
+              </div>
+            )}
             {p.investment.note && <div className="pay-note">{p.investment.note}</div>}
           </div>
         </>
@@ -284,10 +302,18 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
             <dt>Validade</dt>
             <dd>{formatLongDate(p.validUntil)}</dd>
           </div>
+          {durationMonths > 0 && (
+            <div>
+              <dt>Duração estimada</dt>
+              <dd>
+                {durationMonths} {durationMonths === 1 ? "mês" : "meses"}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <div className="cover-foot">
-          {p.vendor.email} · {p.vendor.site}
+          {contact.email} · {contact.site}
         </div>
       </article>
 

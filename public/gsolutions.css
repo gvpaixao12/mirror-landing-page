@@ -1636,6 +1636,45 @@ p {
 .crm-table tr:last-child td {
   border-bottom: none;
 }
+
+/* ---------- Cabeçalho interativo (ordenar + reordenar colunas) ---------- */
+.crm-th-interactive {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.crm-th-interactive:hover {
+  color: var(--ink);
+  background: var(--bg-3);
+}
+.crm-th-interactive.is-dragging {
+  opacity: 0.4;
+}
+.crm-th-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.crm-th-grip {
+  color: var(--border);
+  cursor: grab;
+  font-size: 12px;
+  line-height: 1;
+}
+.crm-th-interactive:hover .crm-th-grip {
+  color: var(--dim);
+}
+.crm-th-sort {
+  color: var(--purple);
+  font-size: 9px;
+  width: 9px;
+}
+.crm-empty-cell {
+  text-align: center;
+  color: var(--dim);
+  padding: 28px 18px;
+}
 .crm-stage-tag {
   font-size: 12px;
   font-weight: 600;

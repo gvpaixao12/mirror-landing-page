@@ -8,7 +8,7 @@
 // =====================================================
 
 import { formatBRL } from "./crm-data";
-import { DEFAULT_PAYMENT_METHODS } from "./pricing-config";
+import { DEFAULT_PAYMENT_METHODS, DEFAULT_PAYMENT_CONDITION } from "./pricing-config";
 
 export interface InvestmentItem {
   id?: string; // id do catálogo (src/lib/pricing-config.ts) — presente só em itens adicionais (addons)
@@ -73,6 +73,7 @@ export interface Proposal {
   investment: {
     options: InvestmentOption[];
     paymentTerms: string;
+    paymentCondition?: string; // condição/parcelamento escolhido (preserva seleção ao editar)
     paymentMethods?: string[]; // formas de pagamento marcadas (preserva seleção ao editar)
     durationMonths?: number; // duração do projeto em meses (preserva seleção ao editar)
     monthlyRate?: number; // valor mensal aplicado durante a duração (R$)
@@ -135,6 +136,7 @@ export interface BuildProposalArgs {
   addons?: PricingSelection[]; // itens adicionais marcados (Integração, banco de dados, infra...)
   durationMonths?: number; // duração do projeto em meses
   monthlyRate?: number; // valor mensal aplicado durante a duração (R$)
+  paymentCondition?: string; // condição/parcelamento escolhido
   paymentMethods?: string[]; // formas de pagamento marcadas
   understanding?: string; // problema do cliente
   solution?: string; // o que será entregue
@@ -146,10 +148,10 @@ export interface BuildProposalArgs {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-// Monta a frase de condições de pagamento a partir do split fixo (entrada +
-// entrega) e das formas de pagamento marcadas no formulário.
-function buildPaymentTerms(methods: string[]): string {
-  const split = "50% na aprovação e 50% na entrega";
+// Monta a frase de condições de pagamento a partir da condição/parcelamento
+// escolhido e das formas de pagamento marcadas no formulário.
+function buildPaymentTerms(condition: string, methods: string[]): string {
+  const split = condition.trim() || DEFAULT_PAYMENT_CONDITION;
   if (methods.length === 0) return `${split}.`;
   if (methods.length === 1) return `${split}. ${methods[0]}.`;
   return `${split}. ${methods.slice(0, -1).join(", ")} ou ${methods[methods.length - 1]}.`;
@@ -161,6 +163,7 @@ export function buildProposal(a: BuildProposalArgs): Proposal {
   const addons = a.addons ?? [];
   const durationMonths = a.durationMonths ?? 0;
   const monthlyRate = a.monthlyRate ?? 300;
+  const paymentCondition = a.paymentCondition ?? DEFAULT_PAYMENT_CONDITION;
   const paymentMethods = a.paymentMethods ?? [...DEFAULT_PAYMENT_METHODS];
   const items: InvestmentItem[] = [
     { label: "Plataforma (escopo base)", price: a.baseValue },
@@ -192,7 +195,8 @@ export function buildProposal(a: BuildProposalArgs): Proposal {
     phases: [],
     investment: {
       options: [{ name: "Investimento", description: "", price: total, recommended: true, items }],
-      paymentTerms: buildPaymentTerms(paymentMethods),
+      paymentTerms: buildPaymentTerms(paymentCondition, paymentMethods),
+      paymentCondition,
       paymentMethods,
       durationMonths,
       monthlyRate,

@@ -49,6 +49,8 @@ import {
   PRICING_CATEGORIES,
   PAYMENT_METHODS,
   DEFAULT_PAYMENT_METHODS,
+  PAYMENT_CONDITIONS,
+  DEFAULT_PAYMENT_CONDITION,
 } from "../lib/pricing-config";
 
 export const Route = createFileRoute("/admin")({
@@ -945,6 +947,60 @@ function ClientesView({
 
 // ===================== Propostas =====================
 
+// Colunas da tabela de propostas — cada uma sabe ordenar e renderizar a si mesma.
+type PropostaColKey = "number" | "clientName" | "company" | "createdAt" | "value" | "status";
+
+const PROPOSTA_COLUMNS: {
+  key: PropostaColKey;
+  label: string;
+  sortValue: (p: Proposta) => string | number;
+  defaultDir: "asc" | "desc";
+  render: (p: Proposta) => React.ReactNode;
+}[] = [
+  {
+    key: "number",
+    label: "Número",
+    sortValue: (p) => p.number.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => <strong>{p.number}</strong>,
+  },
+  {
+    key: "clientName",
+    label: "Cliente",
+    sortValue: (p) => p.clientName.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => p.clientName,
+  },
+  {
+    key: "company",
+    label: "Empresa",
+    sortValue: (p) => p.company.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => p.company || "—",
+  },
+  {
+    key: "createdAt",
+    label: "Data",
+    sortValue: (p) => p.createdAt,
+    defaultDir: "desc",
+    render: (p) => formatDate(p.createdAt),
+  },
+  {
+    key: "value",
+    label: "Valor",
+    sortValue: (p) => p.value,
+    defaultDir: "desc",
+    render: (p) => formatBRL(p.value),
+  },
+  {
+    key: "status",
+    label: "Status",
+    sortValue: (p) => p.status.toLowerCase(),
+    defaultDir: "asc",
+    render: (p) => <PropostaStatusTag status={p.status} archived={p.archived} />,
+  },
+];
+
 function PropostasView({
   propostas,
   onNew,
@@ -961,9 +1017,60 @@ function PropostasView({
   onArchive: (id: string, archived: boolean) => void;
 }) {
   const [filter, setFilter] = useState<"ativas" | "arquivadas" | "todas">("ativas");
-  const filtered = propostas.filter((p) =>
-    filter === "ativas" ? !p.archived : filter === "arquivadas" ? p.archived : true,
-  );
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<{ key: PropostaColKey; dir: "asc" | "desc" } | null>(null);
+  // Ordem das colunas (arrastável). Começa na ordem natural do catálogo.
+  const [colOrder, setColOrder] = useState<PropostaColKey[]>(PROPOSTA_COLUMNS.map((c) => c.key));
+  const [dragKey, setDragKey] = useState<PropostaColKey | null>(null);
+
+  const q = query.trim().toLowerCase();
+  const filtered = propostas.filter((p) => {
+    const matchFilter =
+      filter === "ativas" ? !p.archived : filter === "arquivadas" ? p.archived : true;
+    if (!matchFilter) return false;
+    if (!q) return true;
+    return [p.clientName, p.company].join(" ").toLowerCase().includes(q);
+  });
+
+  // Aplica a ordenação ativa (se houver).
+  const sortCol = sort && PROPOSTA_COLUMNS.find((c) => c.key === sort.key);
+  const rows = sortCol
+    ? [...filtered].sort((a, b) => {
+        const av = sortCol.sortValue(a);
+        const bv = sortCol.sortValue(b);
+        const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+        return sort!.dir === "asc" ? cmp : -cmp;
+      })
+    : filtered;
+
+  // Colunas na ordem escolhida pelo usuário.
+  const columns = colOrder.map((k) => PROPOSTA_COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+
+  const toggleSort = (key: PropostaColKey) => {
+    const col = PROPOSTA_COLUMNS.find((c) => c.key === key)!;
+    setSort((cur) =>
+      cur?.key !== key
+        ? { key, dir: col.defaultDir }
+        : { key, dir: cur.dir === "asc" ? "desc" : "asc" },
+    );
+  };
+
+  const onColDrop = (targetKey: PropostaColKey) => {
+    if (!dragKey || dragKey === targetKey) return;
+    setColOrder((cur) => {
+      const next = cur.filter((k) => k !== dragKey);
+      next.splice(next.indexOf(targetKey), 0, dragKey);
+      return next;
+    });
+    setDragKey(null);
+  };
+
+  const emptyMsg =
+    q.length > 0
+      ? "Nenhuma proposta encontrada para a busca."
+      : filter === "arquivadas"
+        ? "Nenhuma proposta arquivada."
+        : "Nenhuma proposta ainda. Clique em “+ Nova proposta”.";
 
   return (
     <>
@@ -972,47 +1079,90 @@ function PropostasView({
         subtitle="Crie, edite e exporte propostas comerciais em PDF."
         action={{ label: "+ Nova proposta", onClick: onNew }}
         extra={
-          <FilterTabs
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: "ativas", label: "Ativas" },
-              { value: "arquivadas", label: "Arquivadas" },
-              { value: "todas", label: "Todas" },
-            ]}
-          />
+          <>
+            <FilterTabs
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: "ativas", label: "Ativas" },
+                { value: "arquivadas", label: "Arquivadas" },
+                { value: "todas", label: "Todas" },
+              ]}
+            />
+            <input
+              className="crm-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar cliente ou empresa..."
+            />
+          </>
         }
       />
-      <Table
-        head={["Número", "Cliente", "Empresa", "Data", "Valor", "Status", ""]}
-        rows={filtered.map((p) => [
-          <strong key={`n-${p.id}`}>{p.number}</strong>,
-          p.clientName,
-          p.company || "—",
-          formatDate(p.createdAt),
-          formatBRL(p.value),
-          <PropostaStatusTag key={`s-${p.id}`} status={p.status} archived={p.archived} />,
-          <div className="crm-row-actions" key={`a-${p.id}`}>
-            <button className="crm-link" onClick={() => onPdf(p.id)}>
-              PDF
-            </button>
-            <button className="crm-link" onClick={() => onEdit(p)}>
-              Editar
-            </button>
-            <button className="crm-link" onClick={() => onArchive(p.id, !p.archived)}>
-              {p.archived ? "Desarquivar" : "Arquivar"}
-            </button>
-            <button className="crm-link crm-link-danger" onClick={() => onDelete(p.id)}>
-              Excluir
-            </button>
-          </div>,
-        ])}
-        empty={
-          filter === "arquivadas"
-            ? "Nenhuma proposta arquivada."
-            : "Nenhuma proposta ainda. Clique em “+ Nova proposta”."
-        }
-      />
+      <div className="crm-panel crm-panel-flush">
+        <table className="crm-table">
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={"crm-th-interactive" + (dragKey === col.key ? " is-dragging" : "")}
+                  draggable
+                  onDragStart={() => setDragKey(col.key)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => onColDrop(col.key)}
+                  onDragEnd={() => setDragKey(null)}
+                  onClick={() => toggleSort(col.key)}
+                  title="Clique para ordenar · arraste para reordenar"
+                >
+                  <span className="crm-th-label">
+                    <span className="crm-th-grip" aria-hidden>
+                      ⠿
+                    </span>
+                    {col.label}
+                    <span className="crm-th-sort">
+                      {sort?.key === col.key ? (sort.dir === "asc" ? "▲" : "▼") : ""}
+                    </span>
+                  </span>
+                </th>
+              ))}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td className="crm-empty-cell" colSpan={columns.length + 1}>
+                  {emptyMsg}
+                </td>
+              </tr>
+            ) : (
+              rows.map((p) => (
+                <tr key={p.id}>
+                  {columns.map((col) => (
+                    <td key={col.key}>{col.render(p)}</td>
+                  ))}
+                  <td>
+                    <div className="crm-row-actions">
+                      <button className="crm-link" onClick={() => onPdf(p.id)}>
+                        PDF
+                      </button>
+                      <button className="crm-link" onClick={() => onEdit(p)}>
+                        Editar
+                      </button>
+                      <button className="crm-link" onClick={() => onArchive(p.id, !p.archived)}>
+                        {p.archived ? "Desarquivar" : "Arquivar"}
+                      </button>
+                      <button className="crm-link crm-link-danger" onClick={() => onDelete(p.id)}>
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }
@@ -1607,6 +1757,9 @@ function PropostaModal({
   // Duração do projeto (meses) + valor mensal aplicado nesse período.
   const [durationMonths, setDurationMonths] = useState(c?.investment.durationMonths ?? 0);
   const [monthlyRate, setMonthlyRate] = useState(c?.investment.monthlyRate ?? 300);
+  const [paymentCondition, setPaymentCondition] = useState<string>(
+    c?.investment.paymentCondition ?? DEFAULT_PAYMENT_CONDITION,
+  );
   const [paymentMethods, setPaymentMethods] = useState<string[]>(
     c?.investment.paymentMethods ?? [...DEFAULT_PAYMENT_METHODS],
   );
@@ -1677,6 +1830,7 @@ function PropostaModal({
       addons,
       durationMonths,
       monthlyRate,
+      paymentCondition,
       paymentMethods,
       understanding,
       solution,
@@ -1809,6 +1963,17 @@ function PropostaModal({
             />
           </label>
         </div>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Condições de pagamento</span>
+          <select value={paymentCondition} onChange={(e) => setPaymentCondition(e.target.value)}>
+            {PAYMENT_CONDITIONS.map((cond) => (
+              <option key={cond} value={cond}>
+                {cond}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="crm-field">
           <span className="crm-field-label">Formas de pagamento</span>

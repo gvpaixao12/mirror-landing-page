@@ -125,3 +125,17 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
   "Boleto",
   "Cartão de crédito (até 12x)",
 ];
+
+// Condições de pagamento (parcelamento/etapas) selecionáveis na proposta —
+// é a parte "como/quando paga" das condições do PDF. O vendedor escolhe uma.
+export const PAYMENT_CONDITIONS = [
+  "50% na aprovação e 50% na entrega",
+  "40% na aprovação, 30% na entrega da Fase 2 e 30% na publicação",
+  "30% na aprovação e 70% na entrega",
+  "100% na aprovação",
+  "Mensalidade fixa durante a duração do projeto",
+] as const;
+
+export type PaymentCondition = (typeof PAYMENT_CONDITIONS)[number];
+
+export const DEFAULT_PAYMENT_CONDITION: PaymentCondition = "50% na aprovação e 50% na entrega";
