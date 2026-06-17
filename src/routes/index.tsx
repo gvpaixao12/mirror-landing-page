@@ -434,7 +434,7 @@ const CASES: CaseItem[] = [
   {
     id: "barber-book",
     quote:
-      '"Agora tenho o controle da agenda de todos os barbeiros ao mesmo, além do controle financeiro da loja. Tudo junto!"',
+      '"Agora tenho o controle da agenda de todos os barbeiros ao mesmo tempo, além do controle financeiro da loja. Tudo junto!"',
     name: "Gabriel V.",
     role: "Barbearia Santa Mônica",
     clickToPlay: true,
