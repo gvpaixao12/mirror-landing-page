@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getCurrentEmail, isAuthed, logout } from "../lib/admin-auth";
+import { getCurrentName, isAuthed, isCurrentUserAdmin, logout, signUp } from "../lib/admin-auth";
 import {
   STAGES,
   type Stage,
@@ -64,7 +64,7 @@ function AdminPage() {
   const navigate = useNavigate();
   const [view, setView] = useState<View>("dashboard");
   const [ready, setReady] = useState(false);
-  const [email, setEmail] = useState("");
+  const [userName, setUserName] = useState("");
 
   const [leads, setLeads] = useState<Lead[]>([]);
   const [forms, setForms] = useState<FormEntry[]>([]);
@@ -86,6 +86,7 @@ function AdminPage() {
     open: false,
     proposta: null,
   });
+  const [accountModal, setAccountModal] = useState(false);
 
   // Proteção de rota + carga inicial dos dados.
   useEffect(() => {
@@ -95,8 +96,14 @@ function AdminPage() {
         navigate({ to: "/login" });
         return;
       }
+      if (!(await isCurrentUserAdmin())) {
+        // Autenticado, mas sem permissão de admin: encerra a sessão e volta.
+        await logout();
+        if (active) navigate({ to: "/login" });
+        return;
+      }
       if (!active) return;
-      setEmail((await getCurrentEmail()) ?? "");
+      setUserName((await getCurrentName()) ?? "");
       try {
         const [ls, fs] = await Promise.all([fetchLeads(), fetchForms()]);
         if (!active) return;
@@ -271,7 +278,33 @@ function AdminPage() {
     <div className="crm-shell">
       <aside className="crm-sidebar">
         <div className="crm-brand">
-          <span className="crm-brand-dot"></span>
+          <svg width="18" height="18" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient
+                id="plOrbitGradCrm"
+                x1="6"
+                y1="6"
+                x2="58"
+                y2="58"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0" stopColor="#A855F7" />
+                <stop offset="0.5" stopColor="#D14FBF" />
+                <stop offset="1" stopColor="#EC4899" />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="32"
+              cy="32"
+              r="19"
+              fill="none"
+              stroke="url(#plOrbitGradCrm)"
+              strokeWidth="4.5"
+              opacity="0.45"
+            />
+            <circle cx="32" cy="32" r="6.5" fill="url(#plOrbitGradCrm)" />
+            <circle cx="32" cy="13" r="5.5" fill="url(#plOrbitGradCrm)" />
+          </svg>
           <span className="crm-brand-name">ProductLab</span>
           <span className="crm-brand-tag">CRM</span>
         </div>
@@ -290,13 +323,18 @@ function AdminPage() {
         </nav>
 
         <div className="crm-user">
-          <div className="crm-user-row">
-            <span className="crm-avatar">{(email[0] || "A").toUpperCase()}</span>
+          <button
+            type="button"
+            className="crm-user-row crm-user-row-btn"
+            onClick={() => setAccountModal(true)}
+            title="Criar nova conta"
+          >
+            <span className="crm-avatar">{(userName[0] || "A").toUpperCase()}</span>
             <div className="crm-user-info">
-              <strong>{email || "admin@productlab.local"}</strong>
-              <span>Admin</span>
+              <strong>{userName || "Administrador"}</strong>
+              <span>Criar conta +</span>
             </div>
-          </div>
+          </button>
           <button className="crm-logout" onClick={onLogout}>
             Sair
           </button>
@@ -381,6 +419,7 @@ function AdminPage() {
           onSave={saveProposta}
         />
       )}
+      {accountModal && <AccountModal onClose={() => setAccountModal(false)} />}
     </div>
   );
 }
@@ -402,9 +441,6 @@ function DashboardView({ leads, forms }: { leads: Lead[]; forms: FormEntry[] }) 
         <StatCard label="Em negociação" value={s.inNegotiation} hint="Proposta + negociação" />
         <StatCard label="Formulários" value={s.forms} hint={`${s.newForms} novos`} />
         <StatCard label="Negócios fechados" value={s.closedDeals} hint="Status ganho" />
-      </div>
-
-      <div className="crm-stats crm-stats-3">
         <StatCard label="Valor estimado" value={formatBRL(s.estimatedValue)} hint="Soma do funil" />
         <StatCard label="Valor fechado" value={formatBRL(s.closedValue)} hint="Negócios ganhos" />
         <StatCard label="Conversão" value={`${s.conversion}%`} hint="Lead → Ganho" />
@@ -1075,6 +1111,101 @@ function FormulariosView({
 }
 
 // ===================== Modais =====================
+
+function AccountModal({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return setErr("Informe o nome.");
+    if (!email.trim()) return setErr("Informe o email.");
+    if (password.length < 6) return setErr("A senha precisa ter pelo menos 6 caracteres.");
+    setSaving(true);
+    setErr("");
+    const res = await signUp(name, email, password, isAdmin);
+    setSaving(false);
+    if (!res.ok) return setErr(res.error || "Falha ao criar conta.");
+    setDone(true);
+  };
+
+  return (
+    <div className="crm-modal-overlay" onClick={onClose}>
+      <form className="crm-modal" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
+        <h3 className="crm-modal-title">Criar conta</h3>
+
+        {done ? (
+          <>
+            <p className="crm-modal-sub">
+              Conta de <strong>{email}</strong> criada
+              {isAdmin ? " como administrador" : ""}. Enviamos um email de confirmação — o acesso é
+              liberado após o usuário validar o endereço.
+            </p>
+            <div className="crm-modal-actions">
+              <button type="button" className="btn btn-primary" onClick={onClose}>
+                Fechar
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <label className="crm-field">
+              <span className="crm-field-label">Nome</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome da pessoa"
+                autoFocus
+              />
+            </label>
+            <label className="crm-field">
+              <span className="crm-field-label">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email@empresa.com"
+              />
+            </label>
+            <label className="crm-field">
+              <span className="crm-field-label">Senha</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </label>
+            <label className="crm-check">
+              <input
+                type="checkbox"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+              />
+              <span>Administrador</span>
+            </label>
+
+            {err && <div className="crm-login-error">{err}</div>}
+
+            <div className="crm-modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={onClose}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? "Criando..." : "Criar conta"}
+              </button>
+            </div>
+          </>
+        )}
+      </form>
+    </div>
+  );
+}
 
 function LeadModal({
   lead,
