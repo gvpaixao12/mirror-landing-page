@@ -36,6 +36,7 @@ import {
   createProposta,
   updateProposta,
   deleteProposta,
+  setPropostaLead,
   nextPropostaNumber,
 } from "../lib/crm-data";
 import { buildProposal } from "../lib/proposal-data";
@@ -241,6 +242,17 @@ function AdminPage() {
     }
   };
 
+  // (Des)vincula uma proposta a um lead (usado no painel de detalhe do Kanban).
+  const linkProposta = async (propostaId: string, leadId: string | null) => {
+    const prev = propostas;
+    setPropostas((cur) => cur.map((p) => (p.id === propostaId ? { ...p, leadId } : p)));
+    try {
+      await setPropostaLead(propostaId, leadId);
+    } catch {
+      setPropostas(prev);
+    }
+  };
+
   const openPdf = (id: string) => window.open(`/proposta?id=${id}`, "_blank");
 
   const onLogout = async () => {
@@ -295,10 +307,13 @@ function AdminPage() {
         {view === "kanban" && (
           <KanbanView
             leads={leads}
+            propostas={propostas}
             moveLead={moveLead}
             onEdit={(l) => setLeadModal({ open: true, lead: l })}
             onDelete={removeLead}
             onNew={() => setLeadModal({ open: true, lead: null })}
+            onPdf={openPdf}
+            onLink={linkProposta}
           />
         )}
         {view === "leads" && (
@@ -360,6 +375,7 @@ function AdminPage() {
         <PropostaModal
           proposta={propostaModal.proposta}
           existing={propostas}
+          leads={leads}
           onClose={() => setPropostaModal({ open: false, proposta: null })}
           onSave={saveProposta}
         />
@@ -429,19 +445,27 @@ const STAGE_SLUG: Record<Stage, string> = {
 
 function KanbanView({
   leads,
+  propostas,
   moveLead,
   onEdit,
   onDelete,
   onNew,
+  onPdf,
+  onLink,
 }: {
   leads: Lead[];
+  propostas: Proposta[];
   moveLead: (id: string, stage: Stage) => void;
   onEdit: (l: Lead) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  onPdf: (id: string) => void;
+  onLink: (propostaId: string, leadId: string | null) => void;
 }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<Stage | null>(null);
+  // Lead aberto no painel de detalhe (mostra as propostas vinculadas).
+  const [detail, setDetail] = useState<Lead | null>(null);
 
   const onDrop = (stage: Stage) => {
     if (dragId) moveLead(dragId, stage);
@@ -486,6 +510,7 @@ function KanbanView({
                       }
                       key={l.id}
                       draggable
+                      onClick={() => setDetail(l)}
                       onDragStart={() => setDragId(l.id)}
                       onDragEnd={() => {
                         setDragId(null);
@@ -495,12 +520,34 @@ function KanbanView({
                       <div className="crm-card-top">
                         <strong>{l.name}</strong>
                         <div className="crm-card-actions">
-                          <button title="Editar" onClick={() => onEdit(l)}>✎</button>
-                          <button title="Excluir" onClick={() => onDelete(l.id)}>✕</button>
+                          <button
+                            title="Editar"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEdit(l);
+                            }}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            title="Excluir"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(l.id);
+                            }}
+                          >
+                            ✕
+                          </button>
                         </div>
                       </div>
                       <span>{l.company}</span>
                       <span className="crm-card-value">{formatBRL(l.value)}</span>
+                      {propostasForLead(l, propostas).length > 0 && (
+                        <span className="crm-card-tag">
+                          ≡ {propostasForLead(l, propostas).length} proposta
+                          {propostasForLead(l, propostas).length > 1 ? "s" : ""}
+                        </span>
+                      )}
                     </div>
                   ))
                 )}
@@ -509,7 +556,157 @@ function KanbanView({
           );
         })}
       </div>
+
+      {detail && (
+        <LeadDetailModal
+          lead={detail}
+          propostas={propostas}
+          onClose={() => setDetail(null)}
+          onEdit={() => {
+            const l = detail;
+            setDetail(null);
+            onEdit(l);
+          }}
+          onPdf={onPdf}
+          onLink={onLink}
+        />
+      )}
     </>
+  );
+}
+
+// Propostas vinculadas a um lead — só pelo vínculo explícito (lead_id).
+// Como cada proposta tem um único lead_id, ela aparece em no máximo um lead.
+function propostasForLead(lead: Lead, propostas: Proposta[]): Proposta[] {
+  return propostas.filter((p) => p.leadId === lead.id);
+}
+
+// Painel de detalhe do card: dados do lead + propostas vinculadas.
+function LeadDetailModal({
+  lead,
+  propostas,
+  onClose,
+  onEdit,
+  onPdf,
+  onLink,
+}: {
+  lead: Lead;
+  propostas: Proposta[]; // todas as propostas (pra montar a lista de disponíveis)
+  onClose: () => void;
+  onEdit: () => void;
+  onPdf: (id: string) => void;
+  onLink: (propostaId: string, leadId: string | null) => void;
+}) {
+  const linked = propostasForLead(lead, propostas);
+  // Só dá pra vincular propostas que ainda não pertencem a ninguém — assim
+  // uma proposta nunca fica em dois leads.
+  const available = propostas.filter((p) => !p.leadId);
+  const [picking, setPicking] = useState(false);
+  const [pick, setPick] = useState("");
+
+  const confirmLink = () => {
+    if (!pick) return;
+    onLink(pick, lead.id);
+    setPick("");
+    setPicking(false);
+  };
+
+  return (
+    <div className="crm-modal-overlay" onClick={onClose}>
+      <div className="crm-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="crm-modal-head">
+          <h3 className="crm-modal-title">{lead.name}</h3>
+          <span className="crm-status">{lead.stage}</span>
+        </div>
+        <p className="crm-modal-sub">
+          {lead.company || "—"}
+          {lead.email ? ` · ${lead.email}` : ""} · {formatBRL(lead.value)}
+        </p>
+
+        <div className="crm-modal-section-row">
+          <h4 className="crm-modal-section">
+            Propostas vinculadas {linked.length > 0 && `(${linked.length})`}
+          </h4>
+          {!picking && (
+            <button
+              type="button"
+              className="crm-link"
+              onClick={() => setPicking(true)}
+              disabled={available.length === 0}
+              title={available.length === 0 ? "Nenhuma proposta avulsa disponível" : undefined}
+            >
+              + Vincular proposta
+            </button>
+          )}
+        </div>
+
+        {picking && (
+          <div className="crm-link-row">
+            <select value={pick} onChange={(e) => setPick(e.target.value)}>
+              <option value="">Selecione uma proposta…</option>
+              {available.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.number} — {p.clientName}
+                  {p.company ? ` · ${p.company}` : ""} ({formatBRL(p.value)})
+                </option>
+              ))}
+            </select>
+            <button type="button" className="btn btn-primary btn-sm" onClick={confirmLink}>
+              Vincular
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                setPicking(false);
+                setPick("");
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {linked.length === 0 ? (
+          <p className="crm-empty-sm">Nenhuma proposta vinculada a este lead.</p>
+        ) : (
+          <ul className="crm-detail-list">
+            {linked.map((p) => (
+              <li key={p.id} className="crm-detail-item">
+                <div>
+                  <strong>{p.number}</strong>
+                  <span className="crm-detail-meta">
+                    {formatDate(p.createdAt)} · {formatBRL(p.value)}
+                  </span>
+                </div>
+                <div className="crm-detail-item-right">
+                  <PropostaStatusTag status={p.status} />
+                  <button className="crm-link" onClick={() => onPdf(p.id)}>
+                    PDF
+                  </button>
+                  <button
+                    className="crm-link crm-link-danger"
+                    onClick={() => onLink(p.id, null)}
+                    title="Desvincular proposta deste lead"
+                  >
+                    Desvincular
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="crm-modal-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Fechar
+          </button>
+          <button type="button" className="btn btn-primary" onClick={onEdit}>
+            Editar lead
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1157,20 +1354,37 @@ function FormView({
 function PropostaModal({
   proposta,
   existing,
+  leads,
   onClose,
   onSave,
 }: {
   proposta: Proposta | null;
   existing: Proposta[];
+  leads: Lead[];
   onClose: () => void;
   onSave: (input: PropostaInput) => Promise<void>;
 }) {
   const c = proposta?.content;
+  const [leadId, setLeadId] = useState<string | null>(proposta?.leadId ?? null);
   const [clientName, setClientName] = useState(proposta?.clientName ?? "");
   const [company, setCompany] = useState(proposta?.company ?? "");
   const [title, setTitle] = useState(c?.title ?? "");
   const [value, setValue] = useState(proposta?.value ?? 0);
   const [status, setStatus] = useState<PropostaStatus>(proposta?.status ?? "Rascunho");
+
+  // Ao escolher um lead, vincula e preenche cliente/empresa a partir dele.
+  const onPickLead = (id: string) => {
+    if (!id) {
+      setLeadId(null);
+      return;
+    }
+    setLeadId(id);
+    const lead = leads.find((l) => l.id === id);
+    if (lead) {
+      setClientName(lead.name);
+      setCompany(lead.company);
+    }
+  };
   const [understanding, setUnderstanding] = useState(c?.understanding.intro ?? "");
   const [solution, setSolution] = useState(c?.solution.intro ?? "");
   const [scopeText, setScopeText] = useState((c?.scope.included ?? []).join("\n"));
@@ -1212,6 +1426,7 @@ function PropostaModal({
         value,
         status,
         content,
+        leadId,
       });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Falha ao salvar.");
@@ -1229,6 +1444,19 @@ function PropostaModal({
         <h3 className="crm-modal-title">
           {proposta ? `Editar ${proposta.number}` : "Nova proposta"}
         </h3>
+
+        <label className="crm-field">
+          <span className="crm-field-label">Lead vinculado (funil)</span>
+          <select value={leadId ?? ""} onChange={(e) => onPickLead(e.target.value)}>
+            <option value="">— Nenhum (proposta avulsa) —</option>
+            {leads.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+                {l.company ? ` · ${l.company}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <div className="crm-field-row">
           <label className="crm-field">

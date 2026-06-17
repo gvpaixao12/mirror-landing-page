@@ -50,8 +50,13 @@ create table if not exists public.propostas (
   status text not null default 'Rascunho'
     check (status in ('Rascunho','Enviada','Aceita','Recusada')),
   content jsonb not null default '{}'::jsonb,
+  lead_id uuid references public.leads(id) on delete set null,
   created_at timestamptz not null default now()
 );
+
+-- Bancos criados antes da coluna lead_id (vínculo proposta ↔ lead do funil)
+alter table public.propostas
+  add column if not exists lead_id uuid references public.leads(id) on delete set null;
 
 -- ---------- RLS ----------
 alter table public.leads enable row level security;
