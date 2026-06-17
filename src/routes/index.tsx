@@ -392,18 +392,45 @@ function Index() {
   );
 }
 
-const CASES = [
+type CaseItem = {
+  id: string;
+  quote: string;
+  name: string;
+  role: string;
+  hideMobile?: boolean;
+  image?: boolean; // usa imagem estática (desktop.png) no frame, em vez de vídeo
+};
+
+const CASES: CaseItem[] = [
   {
+    id: "barber-book",
+    quote:
+      '"Agora tenho o controle da agenda de todos os barbeiros ao mesmo, além do controle financeiro da loja. Tudo junto!"',
+    name: "Gabriel V.",
+    role: "Barbearia Santa Mônica",
+    image: true,
+  },
+  {
+    id: "mundo-pet",
     quote:
       '"Com a organização do meu estoque no sistema, ficou muito mais fácil! Consegui inclusive aumentar meu faturamento."',
     name: "Giovanna G.",
     role: "Logista na Mundo Pet",
   },
   {
+    id: "technik",
     quote:
       '"Minha apresentação comercial ficou mais dinâmica e interativa. Está mais visual para o cliente, muito mais fácil de gerar valor."',
     name: "Rafael M.",
     role: "Technik",
+    hideMobile: true, // ferramenta desktop-only, sem layout mobile
+  },
+  {
+    id: "rental-dental",
+    quote:
+      '"Foi o projeto perfeito para o consultório da faculdade. Pouco custo e rápido! A gente fazia o controle do material no papel e agora temos um app."',
+    name: "Ana Luiza",
+    role: "Rental Dental",
   },
 ];
 
@@ -418,19 +445,60 @@ function CaseCarousel() {
       <button type="button" className="case-next" aria-label="Próximo case" onClick={next}>
         →
       </button>
-      <div className="case-content">
-        <span className="pill pill-on-dark">
-          <span className="pill-dot pill-dot-pink"></span>
-          case · 2026
-        </span>
-        <h2 className="case-quote">{c.quote}</h2>
-        <div className="case-author">
-          <div className="case-avatar"></div>
-          <div>
-            <strong>{c.name}</strong>
-            <small>{c.role}</small>
+      <div className="case-layout">
+        <div className="case-content">
+          <span className="pill pill-on-dark">
+            <span className="pill-dot pill-dot-pink"></span>
+            case · 2026
+          </span>
+          <h2 className="case-quote">{c.quote}</h2>
+          <div className="case-author">
+            <div className="case-avatar"></div>
+            <div>
+              <strong>{c.name}</strong>
+              <small>{c.role}</small>
+            </div>
           </div>
         </div>
+        {c.id && (
+          <div className="case-media">
+            <div className="case-browser">
+              <div className="case-browser-bar" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              {c.image ? (
+                <img
+                  className="case-video"
+                  src={`/cases/${c.id}/desktop.png`}
+                  alt={`Prévia desktop — ${c.role}`}
+                  loading="lazy"
+                />
+              ) : (
+                <video
+                  key={c.id}
+                  className="case-video"
+                  src={`/cases/${c.id}/video.webm`}
+                  poster={`/cases/${c.id}/poster.png`}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+              )}
+            </div>
+            {!c.hideMobile && (
+              <img
+                className="case-mobile"
+                src={`/cases/${c.id}/mobile.png`}
+                alt={`Prévia mobile — ${c.role}`}
+                loading="lazy"
+              />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

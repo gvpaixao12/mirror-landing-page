@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Config de captura de cases (contém credenciais)
+scripts/cases.config.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
