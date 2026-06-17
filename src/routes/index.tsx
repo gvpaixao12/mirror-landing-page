@@ -125,6 +125,7 @@ function Index() {
             <a href="#produto">Produto</a>
             <a href="#como">Como funciona</a>
             <a href="#cases">Cases</a>
+            <a href="#cta">Agendar uma reunião?</a>
           </nav>
           <div className="nav-actions">
             <button
@@ -149,13 +150,16 @@ function Index() {
           <a href="#cases" onClick={closeMenu}>
             Cases
           </a>
+          <a href="#cta" onClick={closeMenu}>
+            Agendar uma reunião?
+          </a>
           <a href="#cta" className="btn btn-primary" onClick={closeMenu}>
             Começar →
           </a>
         </div>
       </header>
 
-      <section className="hero">
+      <section className="hero" id="produto">
         <div className="hero-glow hero-glow-1" aria-hidden="true"></div>
         <div className="hero-glow hero-glow-2" aria-hidden="true"></div>
         <div className="container hero-inner">
@@ -173,7 +177,7 @@ function Index() {
             </h1>
             <p className="hero-sub">
               Esquece template e SaaS engessado. A gente escuta sua operação, monta um squad enxuto,
-              e entrega um software <i>seu</i> — pensado pro seu fluxo, conectado às suas
+              e te entrega um software <i></i> pensado pro seu fluxo, conectado às suas
               ferramentas.
             </p>
             <div className="hero-video-wrap">
@@ -235,12 +239,34 @@ function Index() {
             </div>
           </div>
           <div className="hero-cards" aria-hidden="true">
+            <div className="float-card card-sprint-1">
+              <div className="card-row">
+                <span className="check-badge">✓</span>
+                <strong>Sprint 1 entregue</strong>
+              </div>
+              <p>Aquisição de documentação e entendimento do projeto.</p>
+              <div className="progress">
+                <div className="progress-bar" style={{ width: "20%" }}></div>
+              </div>
+              <small>20% do projeto</small>
+            </div>
+            <div className="float-card card-sprint-2">
+              <div className="card-row">
+                <span className="check-badge">✓</span>
+                <strong>Sprint 2 entregue</strong>
+              </div>
+              <p>Modelagem de dados e arquitetura base, ambiente no ar.</p>
+              <div className="progress">
+                <div className="progress-bar" style={{ width: "45%" }}></div>
+              </div>
+              <small>45% do projeto</small>
+            </div>
             <div className="float-card card-sprint">
               <div className="card-row">
                 <span className="check-badge">✓</span>
                 <strong>Sprint 3 entregue</strong>
               </div>
-              <p>Módulo de relatórios + integração Bling prontos pra teste.</p>
+              <p>Módulo de relatórios + integração, prontos pra teste.</p>
               <div className="progress">
                 <div className="progress-bar"></div>
               </div>
@@ -252,6 +278,14 @@ function Index() {
                 "Preciso de um portal pros 80 representantes verem comissão em tempo real"
               </p>
               <span className="status-chip">EM ESCOPO</span>
+            </div>
+            <div className="float-card card-brief-2">
+              <div className="mono-tag">// briefing.md</div>
+              <p className="quote">
+                "Quero um sistema financeiro pra controlar caixa, contas a pagar e a receber — somos
+                10 na empresa"
+              </p>
+              <span className="status-chip">NOVO</span>
             </div>
           </div>
         </div>
@@ -335,7 +369,7 @@ function Index() {
             Você sai da call sabendo se faz sentido.
           </p>
           <Link to="/briefing" className="btn btn-primary btn-large">
-            Criar um orçamento →
+            Agendar uma reunião →
           </Link>
         </div>
       </section>
@@ -344,13 +378,7 @@ function Index() {
         <div className="container footer-inner">
           <div>
             <div className="footer-brand">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 64 64"
-                fill="none"
-                style={{ verticalAlign: "middle", marginRight: 6 }}
-              >
+              <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
                 <defs>
                   <linearGradient
                     id="plOrbitGradFooter"

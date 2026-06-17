@@ -12,7 +12,7 @@
   --border: #251f33;
   --purple: #a78bfa;
   --pink: #f472b6;
-  --grad: linear-gradient(135deg, var(--purple), var(--pink));
+  --grad: linear-gradient(135deg, #a855f7 0%, #d14fbf 50%, #ec4899 100%);
 
   --container: 1280px;
   --radius-sm: 10px;
@@ -208,6 +208,11 @@ p {
 }
 .pill-on-dark {
   background: var(--bg-3);
+}
+
+/* Compensa a altura do cabeçalho fixo ao navegar por âncoras */
+section[id] {
+  scroll-margin-top: 90px;
 }
 
 /* ============ NAV ============ */
@@ -424,7 +429,7 @@ p {
 /* Floating cards */
 .hero-cards {
   position: relative;
-  min-height: 360px;
+  min-height: 980px;
 }
 .float-card {
   position: absolute;
@@ -435,14 +440,32 @@ p {
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   width: 260px;
 }
-.card-sprint {
-  top: 20px;
+.card-sprint-1 {
+  top: 0;
+  right: 170px;
+  transform: rotate(-3deg);
+}
+.card-sprint-2 {
+  top: 205px;
   right: 0;
   transform: rotate(3deg);
 }
+.card-sprint {
+  top: 410px;
+  right: 170px;
+  transform: rotate(-2deg);
+}
 .card-brief {
-  top: 230px;
-  right: 180px;
+  top: 615px;
+  right: 0;
+  width: 220px;
+  background: var(--bg-3);
+  transform: rotate(2deg);
+  padding: 16px;
+}
+.card-brief-2 {
+  top: 820px;
+  right: 170px;
   width: 220px;
   background: var(--bg-3);
   transform: rotate(-2deg);
@@ -496,7 +519,8 @@ p {
   font-size: 11px;
   color: var(--dim);
 }
-.card-brief .quote {
+.card-brief .quote,
+.card-brief-2 .quote {
   color: var(--ink);
   font-size: 13px;
   margin-top: 6px;
@@ -872,6 +896,9 @@ p {
   flex-wrap: wrap;
 }
 .footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-weight: 700;
   font-size: 18px;
 }
@@ -1389,6 +1416,35 @@ p {
   align-items: center;
   gap: 10px;
 }
+.crm-user-row-btn {
+  width: 100%;
+  padding: 6px;
+  margin: -6px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.crm-user-row-btn:hover {
+  background: var(--bg-3);
+}
+.crm-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.crm-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--purple);
+  cursor: pointer;
+}
 .crm-avatar {
   width: 34px;
   height: 34px;
@@ -1454,7 +1510,7 @@ p {
 /* ---------- Stat cards ---------- */
 .crm-stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 16px;
 }

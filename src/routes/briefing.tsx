@@ -229,7 +229,7 @@ function BriefingPage() {
                     value={data.name}
                     onChange={set("name")}
                     maxLength={100}
-                    placeholder="Marina Tavares"
+                    placeholder="SEU NOME"
                   />
                 </Field>
                 <Field id="email" label="Email" error={errors.email}>
@@ -295,16 +295,6 @@ function BriefingPage() {
               </FieldGroup>
 
               <FieldGroup title="Sobre o projeto">
-                <Field id="goal" label="Qual o objetivo do software?" error={errors.goal} full>
-                  <textarea
-                    id="f-goal"
-                    rows={4}
-                    value={data.goal}
-                    onChange={set("goal")}
-                    maxLength={2000}
-                    placeholder="Ex.: Quero um portal pros representantes verem comissão em tempo real e exportarem relatórios."
-                  />
-                </Field>
                 <Field
                   id="problem"
                   label="Qual o problema atual / como vocês resolvem hoje?"
@@ -320,6 +310,16 @@ function BriefingPage() {
                     placeholder="Ex.: Hoje rodamos em 14 planilhas, cada gerente atualiza a sua, e o fechamento demora 5 dias."
                   />
                 </Field>
+                <Field id="goal" label="Qual o objetivo do software?" error={errors.goal} full>
+                  <textarea
+                    id="f-goal"
+                    rows={4}
+                    value={data.goal}
+                    onChange={set("goal")}
+                    maxLength={2000}
+                    placeholder="Ex.: Quero um portal pros representantes verem comissão em tempo real e exportarem relatórios."
+                  />
+                </Field>
                 <Field
                   id="tools"
                   label="Ferramentas / sistemas que precisam conversar (opcional)"
@@ -332,25 +332,25 @@ function BriefingPage() {
                     value={data.tools}
                     onChange={set("tools")}
                     maxLength={500}
-                    placeholder="Ex.: Bling, Omie, Google Sheets, WhatsApp"
+                    placeholder=""
                   />
                 </Field>
                 <Field id="budget" label="Faixa de investimento" error={errors.budget}>
                   <select id="f-budget" value={data.budget} onChange={set("budget")}>
                     <option value="">Selecione...</option>
-                    <option>Até R$ 20k</option>
-                    <option>R$ 20k – R$ 50k</option>
-                    <option>R$ 50k – R$ 100k</option>
-                    <option>R$ 100k+</option>
+                    <option>Até R$ 5k</option>
+                    <option>Até R$ 10k</option>
+                    <option>R$ 10k – R$ 20k</option>
+                    <option>R$ 50k+</option>
                     <option>Ainda não sei</option>
                   </select>
                 </Field>
                 <Field id="timeline" label="Prazo ideal" error={errors.timeline}>
                   <select id="f-timeline" value={data.timeline} onChange={set("timeline")}>
                     <option value="">Selecione...</option>
-                    <option>Ontem 😅</option>
                     <option>Em 1 mês</option>
                     <option>Em 2 – 3 meses</option>
+                    <option>Em 1 ano</option>
                     <option>Sem pressa</option>
                   </select>
                 </Field>
