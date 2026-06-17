@@ -224,7 +224,42 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
       {/* ---------- Capa ---------- */}
       <article className="proposta-page proposta-cover">
         <div className="cover-band">
-          <div className="cover-brand">{p.vendor.name}</div>
+          <div className="cover-brand">
+            <svg
+              className="cover-logo"
+              viewBox="0 0 64 64"
+              width="22"
+              height="22"
+              fill="none"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient
+                  id="coverLogoGrad"
+                  x1="6"
+                  y1="6"
+                  x2="58"
+                  y2="58"
+                  gradientUnits="userSpaceOnUse"
+                >
+                  <stop offset="0" stopColor="#fff" stopOpacity="0.95" />
+                  <stop offset="1" stopColor="#fff" stopOpacity="0.6" />
+                </linearGradient>
+              </defs>
+              <circle
+                cx="32"
+                cy="32"
+                r="17"
+                fill="none"
+                stroke="url(#coverLogoGrad)"
+                strokeWidth="5"
+                opacity="0.6"
+              />
+              <circle cx="32" cy="32" r="7" fill="url(#coverLogoGrad)" />
+              <circle cx="32" cy="14" r="6" fill="url(#coverLogoGrad)" />
+            </svg>
+            <span>{p.vendor.name}</span>
+          </div>
           <div className="cover-tag">{p.vendor.tagline}</div>
           <div className="cover-title">{p.title}</div>
           <div className="cover-label" style={{ marginTop: 24 }}>
@@ -252,7 +287,7 @@ function ProposalDocument({ proposal: p }: { proposal: Proposal }) {
         </dl>
 
         <div className="cover-foot">
-          {p.vendor.email} · {p.vendor.phone} · {p.vendor.site}
+          {p.vendor.email} · {p.vendor.site}
         </div>
       </article>
 

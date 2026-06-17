@@ -107,3 +107,21 @@ export const PRICING_CATALOG: PricingItem[] = [
     defaultPrice: 800,
   },
 ];
+
+// Formas de pagamento selecionáveis na proposta — marcadas via checkbox no
+// formulário e exibidas nas condições de pagamento do PDF.
+export const PAYMENT_METHODS = [
+  "Pix",
+  "Boleto",
+  "Cartão de crédito (até 12x)",
+  "Cartão de débito",
+  "Transferência bancária (TED)",
+] as const;
+
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
+  "Pix",
+  "Boleto",
+  "Cartão de crédito (até 12x)",
+];

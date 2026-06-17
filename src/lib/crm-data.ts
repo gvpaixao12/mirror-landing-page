@@ -133,6 +133,10 @@ export async function deleteLead(id: string): Promise<void> {
 
 // ===================== Clientes (CRUD) =====================
 
+// Origem do cliente no funil: ganho (negócio fechado) ou perdido.
+export const CLIENTE_STATUSES = ["ganho", "perdido"] as const;
+export type ClienteStatus = (typeof CLIENTE_STATUSES)[number];
+
 export interface Cliente {
   id: string;
   name: string;
@@ -141,7 +145,9 @@ export interface Cliente {
   phone: string;
   city: string;
   uf: string;
+  status: ClienteStatus;
   createdAt: string; // ISO
+  updatedAt: string; // ISO — última edição/interação
 }
 
 export interface ClienteInput {
@@ -151,6 +157,7 @@ export interface ClienteInput {
   phone: string;
   city: string;
   uf: string;
+  status: ClienteStatus;
 }
 
 interface ClienteRow {
@@ -161,7 +168,9 @@ interface ClienteRow {
   phone: string | null;
   city: string | null;
   uf: string | null;
+  status: ClienteStatus | null;
   created_at: string;
+  updated_at: string | null;
 }
 
 function rowToCliente(r: ClienteRow): Cliente {
@@ -173,7 +182,9 @@ function rowToCliente(r: ClienteRow): Cliente {
     phone: r.phone ?? "",
     city: r.city ?? "",
     uf: r.uf ?? "",
+    status: r.status ?? "ganho",
     createdAt: r.created_at,
+    updatedAt: r.updated_at ?? r.created_at,
   };
 }
 
@@ -193,13 +204,34 @@ export async function createCliente(input: ClienteInput): Promise<Cliente> {
 }
 
 export async function updateCliente(id: string, input: ClienteInput): Promise<void> {
-  const { error } = await supabase.from("clientes").update(input).eq("id", id);
+  // Carimba a última edição/interação a cada atualização (usada nos perdidos).
+  const { error } = await supabase
+    .from("clientes")
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteCliente(id: string): Promise<void> {
   const { error } = await supabase.from("clientes").delete().eq("id", id);
   if (error) throw error;
+}
+
+// Converte um lead em cliente (ganho/perdido). Usado quando o card é movido
+// para "Ganho" ou "Perdido" no Kanban — o lead sai do funil e vira cliente.
+export async function convertLeadToCliente(
+  lead: Lead,
+  status: ClienteStatus,
+): Promise<Cliente> {
+  return createCliente({
+    name: lead.name,
+    company: lead.company,
+    email: lead.email,
+    phone: "",
+    city: "",
+    uf: "",
+    status,
+  });
 }
 
 // ===================== Forms (briefing) =====================
@@ -270,6 +302,7 @@ export interface Proposta {
   status: PropostaStatus;
   content: Proposal; // conteúdo completo usado pra renderizar o PDF
   leadId: string | null; // vínculo com o lead do funil (null = avulsa)
+  archived: boolean; // arquivada (sai da lista ativa, fica só no filtro)
   createdAt: string; // ISO
 }
 
@@ -292,6 +325,7 @@ interface PropostaRow {
   status: PropostaStatus;
   content: Proposal;
   lead_id: string | null;
+  archived: boolean | null;
   created_at: string;
 }
 
@@ -305,6 +339,7 @@ function rowToProposta(r: PropostaRow): Proposta {
     status: r.status,
     content: r.content,
     leadId: r.lead_id ?? null,
+    archived: r.archived ?? false,
     createdAt: r.created_at,
   };
 }
@@ -366,6 +401,12 @@ export async function deleteProposta(id: string): Promise<void> {
 // Como cada proposta guarda um único lead_id, ela nunca fica em dois leads.
 export async function setPropostaLead(id: string, leadId: string | null): Promise<void> {
   const { error } = await supabase.from("propostas").update({ lead_id: leadId }).eq("id", id);
+  if (error) throw error;
+}
+
+// Arquiva/desarquiva uma proposta (sai da lista de ativas).
+export async function setPropostaArchived(id: string, archived: boolean): Promise<void> {
+  const { error } = await supabase.from("propostas").update({ archived }).eq("id", id);
   if (error) throw error;
 }
 
@@ -441,6 +482,17 @@ export function formatDate(iso: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+}
+
+// Data + hora (usada na "última interação" dos clientes perdidos).
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 

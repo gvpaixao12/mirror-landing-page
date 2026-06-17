@@ -158,6 +158,14 @@ p {
 .btn-secondary:hover {
   background: var(--bg-3);
 }
+.btn-danger {
+  background: #f87171;
+  color: var(--bg);
+  box-shadow: 0 10px 32px rgba(248, 113, 113, 0.3);
+}
+.btn-danger:hover {
+  box-shadow: 0 14px 40px rgba(248, 113, 113, 0.45);
+}
 .btn-ghost {
   background: var(--ink);
   color: var(--bg);
@@ -1464,6 +1472,22 @@ p {
   gap: 14px;
   overflow-x: auto;
   padding-bottom: 8px;
+  /* Barra de rolagem escura e discreta (Firefox + Chrome/Safari/Edge). */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+}
+.crm-kanban::-webkit-scrollbar {
+  height: 8px;
+}
+.crm-kanban::-webkit-scrollbar-track {
+  background: transparent;
+}
+.crm-kanban::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+.crm-kanban::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
 }
 .crm-kanban-col {
   background: var(--bg-2);
@@ -1769,6 +1793,36 @@ p {
 .crm-search::placeholder { color: var(--dim); }
 .crm-search:focus { outline: none; border-color: var(--purple); }
 
+/* ---------- Abas de filtro (Formulários / Propostas / Clientes) ---------- */
+.crm-filters {
+  flex: none;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+.crm-filter {
+  border: none;
+  background: none;
+  color: var(--dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+.crm-filter:hover { color: var(--ink); }
+.crm-filter.is-active {
+  color: var(--bg);
+  background: var(--grad);
+}
+
 /* ---------- Ações em linha (tabelas / formulários) ---------- */
 .crm-row-actions { display: flex; gap: 14px; justify-content: flex-end; }
 .crm-link {
@@ -1831,6 +1885,23 @@ p {
   background: var(--bg-3);
   border-color: var(--border);
 }
+.crm-status-ganho {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.crm-status-perdido {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+/* Agrupa o status da proposta com a tag "Arquivada". */
+.crm-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
 
 /* ---------- Modal ---------- */
 .crm-modal-overlay {
@@ -1865,7 +1936,9 @@ p {
   display: none;
 }
 .crm-modal-wide { max-width: min(94vw, 820px); }
+.crm-modal-sm { max-width: 400px; }
 .crm-modal-title { font-size: 22px; }
+.crm-dim { color: var(--dim); }
 .crm-modal-head { display: flex; align-items: center; gap: 12px; }
 .crm-modal-sub { color: var(--dim); font-size: 13px; margin-top: -6px; }
 .crm-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -2049,6 +2122,16 @@ p {
 .crm-total-bar strong {
   font-size: 18px;
   color: var(--purple);
+}
+
+.crm-payment-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: var(--bg);
 }
 
 @media (max-width: 520px) {
