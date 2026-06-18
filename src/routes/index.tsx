@@ -125,6 +125,7 @@ function Index() {
             <a href="#produto">Produto</a>
             <a href="#como">Como funciona</a>
             <a href="#cases">Cases</a>
+            <a href="#demos">Demonstrações</a>
             <a href="#cta">Agendar uma reunião?</a>
           </nav>
           <div className="nav-actions">
@@ -149,6 +150,9 @@ function Index() {
           </a>
           <a href="#cases" onClick={closeMenu}>
             Cases
+          </a>
+          <a href="#demos" onClick={closeMenu}>
+            Demonstrações
           </a>
           <a href="#cta" onClick={closeMenu}>
             Agendar uma reunião?
@@ -350,6 +354,62 @@ function Index() {
       <section className="case" id="cases">
         <div className="container">
           <CaseCarousel />
+        </div>
+      </section>
+
+      <section className="demos" id="demos">
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <span className="pill">
+                <span className="pill-dot"></span>EXPERIMENTE
+              </span>
+              <h2>
+                Teste um produto
+                <br />
+                de verdade agora.
+              </h2>
+            </div>
+            <p className="section-lead">
+              Criamos versões de demonstração para você explorar à vontade. Abra, clique, navegue —
+              é assim que o seu software pode funcionar.
+            </p>
+          </div>
+          <div className="demo-grid">
+            {[
+              {
+                tag: "Estoque & Vendas",
+                title: "Controle de estoque e vendas",
+                desc: "Cadastro de produtos, entradas e saídas, controle de vendas e visão do faturamento — tudo em um só lugar.",
+                href: "https://productlabestoquepreview.lovable.app",
+              },
+              {
+                tag: "Barbearia",
+                title: "Gestão de barbearia",
+                desc: "Agendamentos, controle de funcionários e financeiro da loja, pensado para o dia a dia de uma barbearia.",
+                href: "https://productlabbarberbook.lovable.app/",
+              },
+            ].map((d) => (
+              <a
+                key={d.href}
+                className="demo-card"
+                href={d.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="demo-card-glow" aria-hidden="true"></div>
+                <span className="pill pill-on-dark">
+                  <span className="pill-dot pill-dot-pink"></span>
+                  {d.tag}
+                </span>
+                <h3>{d.title}</h3>
+                <p>{d.desc}</p>
+                <span className="demo-card-link">
+                  Acessar demonstração <span aria-hidden="true">→</span>
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
