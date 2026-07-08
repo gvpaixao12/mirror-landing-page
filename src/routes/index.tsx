@@ -125,6 +125,7 @@ function Index() {
             <a href="#produto">Produto</a>
             <a href="#como">Como funciona</a>
             <a href="#cases">Cases</a>
+            <a href="#portfolio">Portfólio</a>
             <a href="#demos">Demonstrações</a>
             <a href="#cta">Agendar uma reunião?</a>
           </nav>
@@ -150,6 +151,9 @@ function Index() {
           </a>
           <a href="#cases" onClick={closeMenu}>
             Cases
+          </a>
+          <a href="#portfolio" onClick={closeMenu}>
+            Portfólio
           </a>
           <a href="#demos" onClick={closeMenu}>
             Demonstrações
@@ -354,6 +358,66 @@ function Index() {
       <section className="case" id="cases">
         <div className="container">
           <CaseCarousel />
+        </div>
+      </section>
+
+      <section className="portfolio" id="portfolio">
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <span className="pill">
+                <span className="pill-dot"></span>PORTFÓLIO
+              </span>
+              <h2>
+                O que já
+                <br />
+                construímos.
+              </h2>
+            </div>
+            <p className="section-lead">
+              Alguns dos softwares que criamos sob medida — cada um resolvendo um problema real
+              de um negócio diferente.
+            </p>
+          </div>
+          <div className="portfolio-grid">
+            {[
+              {
+                tag: "Barbearia",
+                title: "Gestão de barbearia",
+                desc: "Agenda de todos os barbeiros, controle de funcionários e financeiro da loja em um só lugar.",
+              },
+              {
+                tag: "Estoque & Vendas",
+                title: "Controle de estoque e vendas",
+                desc: "Cadastro de produtos, entradas e saídas, controle de vendas e visão do faturamento.",
+              },
+              {
+                tag: "Automotivo",
+                title: "Technik Search",
+                desc: "Consultor de carros: monta o perfil e o orçamento do cliente e recomenda os modelos ideais, com match e integração à tabela FIPE.",
+              },
+              {
+                tag: "Odontologia",
+                title: "Rental Dental",
+                desc: "Controle de estoque e empréstimo de material odontológico — do papel para um app do consultório.",
+              },
+              {
+                tag: "Finanças",
+                title: "Racha",
+                desc: "App PWA para dividir despesas em grupo: registra quem pagou e calcula quem paga quem. Funciona offline e instala no celular.",
+              },
+            ].map((p) => (
+              <article className="portfolio-card" key={p.title}>
+                <div className="demo-card-glow" aria-hidden="true"></div>
+                <span className="pill pill-on-dark">
+                  <span className="pill-dot pill-dot-pink"></span>
+                  {p.tag}
+                </span>
+                <h3>{p.title}</h3>
+                <p>{p.desc}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

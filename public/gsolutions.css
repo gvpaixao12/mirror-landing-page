@@ -995,6 +995,59 @@ section[id] {
   }
 }
 
+.portfolio {
+  padding-bottom: var(--section-y);
+}
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.portfolio-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(24px, 3vw, 40px);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.portfolio-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(167, 139, 250, 0.4);
+  box-shadow: 0 24px 50px -28px rgba(167, 139, 250, 0.5);
+}
+.portfolio-card:hover .demo-card-glow {
+  opacity: 1;
+}
+.portfolio-card h3 {
+  position: relative;
+  font-size: clamp(20px, 2.2vw, 26px);
+  margin: 16px 0 8px;
+}
+.portfolio-card p {
+  position: relative;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--dim);
+}
+@media (max-width: 960px) {
+  .portfolio-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
