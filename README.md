@@ -2,6 +2,10 @@
 
 Marketing landing page for **ProductLab**, a custom-software studio. It presents the studio's offer, a sprint-based delivery process, and a set of real client case studies with autoplaying video.
 
+🔗 **Live:** [productlabsoftware.com.br](https://productlabsoftware.com.br/)
+
+![ProductLab landing page](docs/screenshot.png)
+
 ## Features
 
 - **Animated case studies** — showcase videos for real projects (Barber Book, Mundo Pet, Rental Dental, Technik).
