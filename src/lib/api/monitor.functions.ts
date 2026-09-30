@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import type { ServerStats } from "./monitor.server";
 
-export type { ServerStats, Pm2Proc } from "./monitor.server";
+export type { ServerStats, Pm2Proc, GameRoom, PgStats } from "./monitor.server";
 
 // Métricas do servidor pro painel "Servidor" do CRM.
 // O cliente manda o access token da sessão Supabase; aqui validamos o

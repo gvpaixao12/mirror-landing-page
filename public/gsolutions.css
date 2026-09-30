@@ -2734,3 +2734,11 @@ section[id] {
     gap: 4px;
   }
 }
+.crm-monitor-sub {
+  color: var(--dim);
+  font-size: 12px;
+}
+.crm-monitor-pg {
+  margin-top: 16px;
+  margin-bottom: 0;
+}

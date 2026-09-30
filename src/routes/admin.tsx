@@ -737,6 +737,137 @@ function ServidorView() {
             )}
           </div>
 
+          {stats.games && (
+            <div className="crm-panel crm-panel-flush">
+              <h3 className="crm-panel-title crm-monitor-title">
+                Salas do Vôlei (Godot) ·{" "}
+                {stats.games.reduce((a, g) => a + (g.info?.players ?? 0), 0)} jogadores online
+              </h3>
+              <div className="crm-monitor-scroll">
+                <table className="crm-table">
+                  <thead>
+                    <tr>
+                      <th>Sala</th>
+                      <th>Status</th>
+                      <th>Jogadores</th>
+                      <th>CPU</th>
+                      <th>Memória</th>
+                      <th>Uptime</th>
+                      <th>Restarts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.games.map((g, i) => (
+                      <tr key={g.unit}>
+                        <td>
+                          Sala {i + 1}
+                          <span className="crm-monitor-sub">:{g.port}</span>
+                        </td>
+                        <td>
+                          <span
+                            className={
+                              "crm-status " +
+                              (!g.active
+                                ? "crm-status-perdido"
+                                : g.info?.in_match
+                                  ? "crm-status-novo"
+                                  : g.info
+                                    ? "crm-status-ganho"
+                                    : "crm-status-arquivado")
+                            }
+                          >
+                            {!g.active
+                              ? "parada"
+                              : g.info?.in_match
+                                ? "em partida"
+                                : g.info
+                                  ? "aguardando"
+                                  : "sem resposta"}
+                          </span>
+                          {g.info?.locked && <span className="crm-monitor-sub"> 🔒 senha</span>}
+                        </td>
+                        <td>
+                          {g.info ? `${g.info.players}/${g.info.max}` : "—"}
+                          {g.info && g.info.names.length > 0 && (
+                            <div className="crm-monitor-sub">{g.info.names.join(", ")}</div>
+                          )}
+                        </td>
+                        <td>{g.cpuPct != null ? `${g.cpuPct.toFixed(1)}%` : "—"}</td>
+                        <td>{g.memory != null ? formatBytes(g.memory) : "—"}</td>
+                        <td>{g.uptimeSec != null ? formatUptime(g.uptimeSec) : "—"}</td>
+                        <td>{g.restarts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {stats.postgres && (
+            <>
+              <div className="crm-stats crm-monitor-pg">
+                <StatCard
+                  label="PostgreSQL"
+                  value={`${Object.values(stats.postgres.conns).reduce((a, n) => a + n, 0)}/${stats.postgres.maxConn}`}
+                  hint={
+                    Object.entries(stats.postgres.conns)
+                      .map(([st, n]) => `${n} ${st}`)
+                      .join(" · ") || "Nenhuma conexão de cliente"
+                  }
+                />
+                <StatCard
+                  label="Transações/s"
+                  value={stats.postgres.tps != null ? stats.postgres.tps.toFixed(1) : "—"}
+                  hint="Commits + rollbacks, todos os bancos"
+                />
+                <StatCard
+                  label="Cache hit"
+                  value={
+                    stats.postgres.cacheHitPct != null ? `${stats.postgres.cacheHitPct}%` : "—"
+                  }
+                  hint="Leituras servidas da memória"
+                />
+                <StatCard
+                  label="Uptime do banco"
+                  value={formatUptime(stats.postgres.uptimeSec)}
+                  hint={
+                    stats.postgres.longestQuerySec
+                      ? `Query mais longa: ${stats.postgres.longestQuerySec}s`
+                      : `Versão ${stats.postgres.version}`
+                  }
+                />
+              </div>
+              <div className="crm-panel crm-panel-flush">
+                <h3 className="crm-panel-title crm-monitor-title">Bancos de dados</h3>
+                <div className="crm-monitor-scroll">
+                  <table className="crm-table">
+                    <thead>
+                      <tr>
+                        <th>Banco</th>
+                        <th>Tamanho</th>
+                        <th>Conexões</th>
+                        <th>Cache hit</th>
+                        <th>Deadlocks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.postgres.dbs.map((d) => (
+                        <tr key={d.name}>
+                          <td>{d.name}</td>
+                          <td>{formatBytes(d.size)}</td>
+                          <td>{d.conns}</td>
+                          <td>{d.cacheHitPct != null ? `${d.cacheHitPct}%` : "—"}</td>
+                          <td>{d.deadlocks}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
           <div className="crm-panel">
             <h3 className="crm-panel-title">Aplicação e serviços</h3>
             <div className="crm-monitor-kv">
