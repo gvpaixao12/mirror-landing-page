@@ -2678,3 +2678,59 @@ section[id] {
   font-size: 18px;
   flex-shrink: 0;
 }
+
+/* ---------- Servidor (monitoramento) ---------- */
+.crm-monitor-row {
+  grid-template-columns: 110px 1fr minmax(90px, auto);
+}
+.crm-monitor-row .crm-funnel-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.crm-funnel-fill.is-warning {
+  background: #f59e0b;
+}
+.crm-funnel-fill.is-critical {
+  background: #f87171;
+}
+.crm-monitor-title {
+  padding: 20px 18px 0;
+  margin-bottom: 6px;
+}
+.crm-monitor-scroll {
+  overflow-x: auto;
+}
+.crm-monitor-kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px 24px;
+  font-size: 14px;
+  align-items: center;
+}
+.crm-monitor-kv > span {
+  color: var(--dim);
+}
+.crm-monitor-kv > strong {
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.crm-monitor-error {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+@media (max-width: 520px) {
+  .crm-monitor-row {
+    grid-template-columns: 70px 1fr;
+  }
+  .crm-monitor-row .crm-funnel-count {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .crm-monitor-kv {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

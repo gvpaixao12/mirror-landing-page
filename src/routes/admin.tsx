@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { getCurrentName, isAuthed, isCurrentUserAdmin, logout, signUp } from "../lib/admin-auth";
 import {
   STAGES,
@@ -52,6 +52,8 @@ import {
   PAYMENT_CONDITIONS,
   DEFAULT_PAYMENT_CONDITION,
 } from "../lib/pricing-config";
+import { supabase } from "../lib/supabase";
+import { getServerStats, type ServerStats } from "../lib/api/monitor.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -60,7 +62,14 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type View = "dashboard" | "kanban" | "leads" | "clientes" | "propostas" | "formularios";
+type View =
+  | "dashboard"
+  | "kanban"
+  | "leads"
+  | "clientes"
+  | "propostas"
+  | "formularios"
+  | "servidor";
 
 const NAV: { key: View; label: string; icon: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: "▦" },
@@ -69,6 +78,7 @@ const NAV: { key: View; label: string; icon: string }[] = [
   { key: "clientes", label: "Clientes", icon: "◆" },
   { key: "propostas", label: "Propostas", icon: "≡" },
   { key: "formularios", label: "Formulários", icon: "✉" },
+  { key: "servidor", label: "Servidor", icon: "◉" },
 ];
 
 function AdminPage() {
@@ -446,6 +456,7 @@ function AdminPage() {
             onDelete={removeForm}
           />
         )}
+        {view === "servidor" && <ServidorView />}
       </main>
 
       {leadModal.open && (
@@ -534,6 +545,233 @@ function DashboardView({ leads, forms }: { leads: Lead[]; forms: FormEntry[] }) 
           ))}
         </div>
       </div>
+    </>
+  );
+}
+
+// ===================== Servidor (monitoramento) =====================
+
+const MONITOR_INTERVAL_MS = 3000;
+
+function formatBytes(n: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024;
+    i++;
+  }
+  return `${n.toFixed(i >= 3 ? 1 : 0)} ${units[i]}`;
+}
+
+function formatUptime(sec: number): string {
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}min`;
+  return `${m}min`;
+}
+
+function ServidorView() {
+  const [stats, setStats] = useState<ServerStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    async function tick() {
+      if (!document.hidden) {
+        try {
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          if (!token) throw new Error("Sessão expirada");
+          const s = await getServerStats({ data: { token } });
+          if (!alive) return;
+          setStats(s);
+          setError(null);
+        } catch (e) {
+          if (alive) setError(e instanceof Error ? e.message : "Falha ao ler o servidor");
+        }
+      }
+      if (alive) timer = setTimeout(tick, MONITOR_INTERVAL_MS);
+    }
+    tick();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  const memPct = stats ? (stats.memory.used / stats.memory.total) * 100 : 0;
+  const diskPct = stats?.disk ? (stats.disk.used / stats.disk.total) * 100 : 0;
+  const meters = stats
+    ? [
+        { label: "CPU", pct: stats.cpu.usagePct, text: `${stats.cpu.usagePct.toFixed(0)}%` },
+        {
+          label: "Memória",
+          pct: memPct,
+          text: `${formatBytes(stats.memory.used)} / ${formatBytes(stats.memory.total)}`,
+        },
+        ...(stats.disk
+          ? [
+              {
+                label: "Disco (/)",
+                pct: diskPct,
+                text: `${formatBytes(stats.disk.used)} / ${formatBytes(stats.disk.total)}`,
+              },
+            ]
+          : []),
+      ]
+    : [];
+
+  return (
+    <>
+      <PageHead
+        title="Servidor"
+        subtitle={
+          stats
+            ? `${stats.host.hostname} · atualizado ${new Date(stats.at).toLocaleTimeString("pt-BR")}`
+            : "Monitoramento da VPS em tempo real."
+        }
+      />
+
+      {error && (
+        <div className="crm-panel crm-monitor-error">
+          {error}
+          {stats && " — exibindo a última leitura."}
+        </div>
+      )}
+      {!stats && !error && <p className="crm-empty">Carregando métricas...</p>}
+
+      {stats && (
+        <>
+          <div className="crm-stats">
+            <StatCard
+              label="CPU"
+              value={`${stats.cpu.usagePct.toFixed(0)}%`}
+              hint={`${stats.cpu.cores} núcleos · load ${stats.cpu.load.map((l) => l.toFixed(2)).join(" ")}`}
+            />
+            <StatCard
+              label="Memória"
+              value={`${memPct.toFixed(0)}%`}
+              hint={`${formatBytes(stats.memory.used)} de ${formatBytes(stats.memory.total)}`}
+            />
+            <StatCard
+              label="Disco"
+              value={stats.disk ? `${diskPct.toFixed(0)}%` : "—"}
+              hint={
+                stats.disk
+                  ? `${formatBytes(stats.disk.total - stats.disk.used)} livres`
+                  : "Indisponível"
+              }
+            />
+            <StatCard
+              label="Uptime da VPS"
+              value={formatUptime(stats.host.uptimeSec)}
+              hint={`${stats.host.platform} ${stats.host.release}`}
+            />
+          </div>
+
+          <div className="crm-panel">
+            <h3 className="crm-panel-title">Uso de recursos</h3>
+            <div className="crm-funnel">
+              {meters.map((m) => (
+                <div className="crm-funnel-row crm-monitor-row" key={m.label}>
+                  <span className="crm-funnel-label">{m.label}</span>
+                  <div className="crm-funnel-track">
+                    <div
+                      className={
+                        "crm-funnel-fill" +
+                        (m.pct >= 90 ? " is-critical" : m.pct >= 75 ? " is-warning" : "")
+                      }
+                      style={{ width: `${Math.min(100, m.pct)}%` }}
+                    ></div>
+                  </div>
+                  <span className="crm-funnel-count">{m.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="crm-panel crm-panel-flush">
+            <h3 className="crm-panel-title crm-monitor-title">Processos (PM2)</h3>
+            {stats.pm2 ? (
+              <div className="crm-monitor-scroll">
+                <table className="crm-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Status</th>
+                      <th>CPU</th>
+                      <th>Memória</th>
+                      <th>Uptime</th>
+                      <th>Restarts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.pm2.map((p) => (
+                      <tr key={p.name}>
+                        <td>{p.name}</td>
+                        <td>
+                          <span
+                            className={
+                              "crm-status " +
+                              (p.status === "online" ? "crm-status-ganho" : "crm-status-perdido")
+                            }
+                          >
+                            {p.status}
+                          </span>
+                        </td>
+                        <td>{p.cpu}%</td>
+                        <td>{formatBytes(p.memory)}</td>
+                        <td>{p.uptimeMs != null ? formatUptime(p.uptimeMs / 1000) : "—"}</td>
+                        <td>{p.restarts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="crm-empty">PM2 não encontrado neste ambiente.</p>
+            )}
+          </div>
+
+          <div className="crm-panel">
+            <h3 className="crm-panel-title">Aplicação e serviços</h3>
+            <div className="crm-monitor-kv">
+              <span>Node</span>
+              <strong>{stats.node.version}</strong>
+              <span>Processo (PID {stats.node.pid})</span>
+              <strong>
+                {formatBytes(stats.node.rss)} RSS · heap {formatBytes(stats.node.heapUsed)} · no ar
+                há {formatUptime(stats.node.uptimeSec)}
+              </strong>
+              <span>CPU</span>
+              <strong>{stats.cpu.model}</strong>
+              {stats.services.map((s) => (
+                <Fragment key={s.name}>
+                  <span>{s.name}</span>
+                  <strong>
+                    <span
+                      className={
+                        "crm-status " +
+                        (s.active === true
+                          ? "crm-status-ganho"
+                          : s.active === false
+                            ? "crm-status-perdido"
+                            : "crm-status-arquivado")
+                      }
+                    >
+                      {s.active === true ? "ativo" : s.active === false ? "parado" : "desconhecido"}
+                    </span>
+                  </strong>
+                </Fragment>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
